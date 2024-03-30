@@ -1,0 +1,178 @@
+[
+    {
+        "id": "000002",
+        "title": "Move reduces to merge: A theory of locality",
+        "authors": [
+            "Michal Starke"
+        ],
+        "date": "February 2001",
+        "published_in": "",
+        "keywords_raw": "generative syntax, principles and parameters, syntax",
+        "keywords": [
+            "generative syntax",
+            "principles and parameters",
+            "syntax"
+        ],
+        "abstract": "Dissertation.",
+        "downloads": 3815,
+        "link": "https://ling.auf.net/lingbuzz/000002"
+    },
+    {
+        "id": "000003",
+        "title": "On the Form of Chains: Criterial Positions and ECP Effects",
+        "authors": [
+            "Luigi Rizzi"
+        ],
+        "date": "January 2004",
+        "published_in": "",
+        "keywords_raw": "generative syntax, principles and parameters, syntax",
+        "keywords": [
+            "generative syntax",
+            "principles and parameters",
+            "syntax"
+        ],
+        "abstract": "Originally available at ",
+        "downloads": 431,
+        "link": "https://ling.auf.net/lingbuzz/000003"
+    },
+    {
+        "id": "000004",
+        "title": "On the Inexistence of Specifiers and the Nature of Heads",
+        "authors": [
+            "Michal Starke"
+        ],
+        "date": "May 2001",
+        "published_in": "",
+        "keywords_raw": "syntax, elegance",
+        "keywords": [
+            "syntax",
+            "elegance"
+        ],
+        "abstract": "This papers argues that there is no such thing as 'specifier' (as distinct from 'head'). Put differently, all merges are first merges and there is no such thing as 'second merge' (with different properties from first merge). What we (mis)took for specifiers are in fact heads, in the sense that they project the label of the merger. As a result, all syntactic relations reduce to head-complement relations. It is argued that this simplification makes the theory both more elegant and more integrated. The independently needed theory of labelling now does much more work, and extraneous assumptions such as 'checking domains and mechanisms' are unnecessary.",
+        "downloads": 1882,
+        "link": "https://ling.auf.net/lingbuzz/000004"
+    },
+    {
+        "id": "000005",
+        "title": "The Typology of Structural Deficiency",
+        "authors": [
+            "Anna Cardinaletti",
+            "Michal Starke"
+        ],
+        "date": "October 1994",
+        "published_in": "",
+        "keywords_raw": "principles and parameters, clitics, syntax, pronouns",
+        "keywords": [
+            "principles and parameters",
+            "clitics",
+            "syntax",
+            "pronouns"
+        ],
+        "abstract": "We argue that there is an intermediate class of pronouns, less deficient than clitics but more deficient than strong pronouns. These intermediate pronouns, 'weak pronouns', are XPs but cannot be modified, coordinated, etc. on a par with clitics. In the first part of the article we survey the evidence showing the need for a tripartition, and in the second part we offer a theory of the tripartition in which 'deficiency' is a progressive peeling away of structural layers, from the top of the representation. Weak pronouns are thus noun phrases with the top layer peeled off, and clitics are still more deprived. It is shown that this approach correctly handles the cross-modular facts about clitics, and elegantly integrates clitics (and weak pronouns) with the rest of our knowledge about phrase-structure.",
+        "downloads": 4130,
+        "link": "https://ling.auf.net/lingbuzz/000005"
+    },
+    {
+        "id": "000006",
+        "title": "On the Format for Small Clauses",
+        "authors": [
+            "Michal Starke"
+        ],
+        "date": "March 1995",
+        "published_in": "",
+        "keywords_raw": "syntax",
+        "keywords": [
+            "syntax"
+        ],
+        "abstract": "",
+        "downloads": 2257,
+        "link": "https://ling.auf.net/lingbuzz/000006"
+    },
+    {
+        "id": "000007",
+        "title": "The Lexical Syntax and Lexical Semantics of the Verb Particle Construction",
+        "authors": [
+            "Gillian Ramchand",
+            "Peter Svenonius"
+        ],
+        "date": "March 2002",
+        "published_in": "Proceedings of WCCFL Santa Cruz",
+        "keywords_raw": "complex predicate, syntax, small clause, result, verb-particle",
+        "keywords": [
+            "complex predicate",
+            "syntax",
+            "small clause",
+            "result",
+            "verb",
+            "particle"
+        ],
+        "abstract": "",
+        "downloads": 2927,
+        "link": "https://ling.auf.net/lingbuzz/000007"
+    },
+    {
+        "id": "000008",
+        "title": "On the Edge",
+        "authors": [
+            "Peter Svenonius"
+        ],
+        "date": "April 2004",
+        "published_in": "",
+        "keywords_raw": "phase, successive-cyclic movement, syntax, edge",
+        "keywords": [
+            "phase",
+            "successive",
+            "cyclic movement",
+            "syntax",
+            "edge"
+        ],
+        "abstract": "Published in 2004 Kluwer volume 'Peripheries' ed. by Adger, de Cat, and Tsoulas",
+        "downloads": 2628,
+        "link": "https://ling.auf.net/lingbuzz/000008"
+    },
+    {
+        "id": "000009",
+        "title": "Merge and Move: Wh-dependencies revisited",
+        "authors": [
+            "David Adger",
+            "Gillian Ramchand"
+        ],
+        "date": "March 2003",
+        "published_in": "revised version appeared in Linguistic Inquiry 2005",
+        "keywords_raw": "wh-movement, syntax-semantics interface, relatives, syntax, semantics, scottish gaelic",
+        "keywords": [
+            "wh",
+            "movement",
+            "syntax",
+            "semantics interface",
+            "relatives",
+            "syntax",
+            "semantics",
+            "scottish gaelic"
+        ],
+        "abstract": "In this paper we argue that, under current conceptions of the architecture of the grammar, apparent wh-dependencies can, in principle, arise from either a movement or a base generation strategy, where AGREE establishes the syntactic connection in the latter case. The crucial diagnostics are not locality effects, but rather identity effects. We implement the base generation analysis using a minimal set of semantically interpretable features, together with a maximally simple universal syntax/semantics correspondence. We show that parametric variation arises because of the different way the features are bundled on functional heads. We further argue that it is the bundling of two features on a single lexical item, together with the correspondence that requires them to be interpreted apart, that is responsible for the displacement property of human languages.",
+        "downloads": 2244,
+        "link": "https://ling.auf.net/lingbuzz/000009"
+    },
+    {
+        "id": "000010",
+        "title": "Something invisible in English",
+        "authors": [
+            "Thomas Leu"
+        ],
+        "date": "April 2004",
+        "published_in": "UPenn Working Papers in Linguistics 11.1: Proceedings of PLC 28, p.143-155",
+        "keywords_raw": "swiss-german, adjective stranding, syntax, indefinite pronouns, silent nouns",
+        "keywords": [
+            "swiss",
+            "german",
+            "adjective stranding",
+            "syntax",
+            "indefinite pronouns",
+            "silent nouns"
+        ],
+        "abstract": "In view of French, Swiss German, and English data, indefinite pronouns (IPRs) are argued to consist of two functional elements, e.g. 'some' and 'thing', licensing an unpronounced nominal head. Adjectival modifiers of IPRs are argued to be in a separate nominal projection, also headed by an unpronounced nominal.",
+        "downloads": 316,
+        "link": "https://ling.auf.net/lingbuzz/000010"
+    }
+]

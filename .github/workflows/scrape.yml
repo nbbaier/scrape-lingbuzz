@@ -15,7 +15,7 @@ jobs:
       - name: Install depependencies
         run: bun install
       - name: Fetch the data
-        run: bun run src/index.ts | jq . > data.json
+        run: bun run src/index.ts
       - name: Commit and push if it changed
         run: |-
           git config user.name "Automated"
