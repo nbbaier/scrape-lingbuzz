@@ -3,11 +3,9 @@ run-name: ${{ github.actor }} is testing out Bun
 on: [push]
 jobs:
   my-job:
-    name: my-job
+    name: Setting UP Bun
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
-      - run: bun -e 'console.log("hello")'
-      - run: bun index.ts
-      
+      - run: bun install
