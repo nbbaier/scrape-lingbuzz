@@ -1,8 +1,14 @@
 name: Scrape lingbuzz
 run-name: Scraping
-on: [push]
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+  - cron:  '1 0 * * *'
+  
 jobs:
-  my-job:
+  scraper:
     runs-on: ubuntu-latest
     permissions: # Job-level permissions configuration starts here
       contents: write # 'write' access to repository contents
