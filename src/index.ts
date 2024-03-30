@@ -72,7 +72,7 @@ export function parseAbstract(rawAbstract: string): string {
 }
 
 const START_ID = 2;
-const END_ID = 10;
+const END_ID = 8004;
 
 async function main() {
   try {
@@ -84,8 +84,10 @@ async function main() {
       const pageTitle = document.querySelector("title")?.textContent;
 
       if (pageTitle === "lingbuzz - archive of linguistics articles") {
+        console.log(`No paper found for ${id}`);
         continue;
       }
+
       const header = parseCenterElement(document);
       const rowTexts = parseTable(document);
 
