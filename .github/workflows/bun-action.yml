@@ -9,3 +9,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
       - run: bun -e 'console.log("hello")'
+      - run: bun index.ts
+      
