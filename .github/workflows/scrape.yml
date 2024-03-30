@@ -2,10 +2,8 @@ name: Scrape lingbuzz
 run-name: Scraping
 
 on:
-  push:
-  workflow_dispatch:
   schedule:
-  - cron:  '1 0 * * *'
+    - cron:  '1 0 * * *'
   
 jobs:
   scraper:
