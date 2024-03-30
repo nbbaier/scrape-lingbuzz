@@ -118,7 +118,12 @@ async function main() {
     });
   }
 
-  console.log(JSON.stringify(papers));
+  console.log(
+    JSON.stringify(papers)
+      .replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 main();
