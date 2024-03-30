@@ -16,7 +16,7 @@ export function splitKeywords(inputString: string): string[] {
 }
 
 export async function fetchHtml(id: string): Promise<string> {
-  console.log(`Getting ${id}`);
+  //   console.log(`Getting ${id}`);
   const res = await fetch(`https://ling.auf.net/lingbuzz/${id}`);
   return res.text();
 }
@@ -116,4 +116,4 @@ papers.push({
   link: `https://ling.auf.net/lingbuzz/${id}`,
 });
 
-console.log(papers);
+console.log(JSON.stringify(papers));
