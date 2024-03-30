@@ -83,7 +83,7 @@ async function main() {
     const pageTitle = document.querySelector("title")?.textContent;
 
     if (pageTitle === "lingbuzz - archive of linguistics articles") {
-      throw new Error(`No paper found for ${id}`);
+      continue;
     }
     const header = parseCenterElement(document);
     const rowTexts = parseTable(document);
