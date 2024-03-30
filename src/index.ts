@@ -121,3 +121,5 @@ async function main() {
 
   console.log(JSON.stringify(papers));
 }
+
+main();
