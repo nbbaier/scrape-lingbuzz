@@ -1,90 +1,29 @@
 import { JSDOM } from "jsdom";
 import type { Paper } from "./types";
+import { getHtml } from "./getHtml";
+import { splitKeywords } from "./splitKeywords";
+import {
+  parseCenterElement,
+  parseTable,
+  parseAbstract,
+} from "./parseCenterElement";
+import { newIds } from "./newIds";
 
 const papers: Paper[] = [];
 
-export function splitKeywords(inputString: string): string[] {
-  const splitRegex = /,(?![^{\[\(<]*[\]\)}>])/;
-  const resplitRegex = / ·|-|–||\/ /;
-  return inputString
-    .split(splitRegex)
-    .map((s) => s.split(resplitRegex))
-    .flat()
-    .map((s) => s.trim());
-}
+const newIdsList = await newIds();
 
-export async function fetchHtml(id: string): Promise<string> {
-  const res = await fetch(`https://ling.auf.net/lingbuzz/${id}`);
-  console.log(`Getting paper ${id}`);
-  return res.text();
-}
-
-async function getHtml(id: string): Promise<string> {
-  const html = await fetchHtml(id);
-  return html;
-}
-
-export function parseCenterElement(document: Document): string[] {
-  const centerElement = document.querySelector("body > center");
-  if (!centerElement) return [];
-
-  const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
-
-  const lines = linesWithHtml
-    .map((line) => {
-      const tempDom = new JSDOM(`<div>${line}</div>`);
-      return (
-        tempDom.window.document.querySelector("div")?.textContent?.trim() || ""
-      );
-    })
-    .filter(Boolean); // Filter out any empty strings
-
-  return lines;
-}
-
-export function parseTable(document: Document): Map<string, string> {
-  const table = document.querySelector("body > table");
-  if (!table) {
-    return new Map();
-  }
-
-  const tableDataMap = new Map<string, string>();
-  table.querySelectorAll("tr").forEach((row) => {
-    const cells = Array.from(row.querySelectorAll("td"))
-      .map((td) => td.textContent?.trim())
-      .filter(Boolean); // This removes any falsy values, including empty strings
-
-    if (cells.length >= 2) {
-      const key = (cells[0] ?? "").replace(":", "");
-      const value = cells[1] || "";
-      tableDataMap.set(key, value);
-    }
-  });
-
-  return tableDataMap;
-}
-
-export function parseAbstract(rawAbstract: string): string {
-  return rawAbstract
-    .replace(/"/g, "'")
-    .replace(/\n/g, " ")
-    .replace(/\s+/g, " ");
-}
-
-const START_ID = 2;
-const END_ID = 8004;
-
-async function main() {
+async function scrapePapers(ids: number[] = []) {
   try {
-    for (let i = START_ID; i <= END_ID; i++) {
-      const id = i.toString().padStart(6, "0");
-      const html = await getHtml(id);
+    for (const id of ids) {
+      const paperId = id.toString().padStart(6, "0");
+      const html = await getHtml(paperId);
       const document = new JSDOM(html).window.document;
 
       const pageTitle = document.querySelector("title")?.textContent;
 
       if (pageTitle === "lingbuzz - archive of linguistics articles") {
-        console.log(`No paper found for ${id}`);
+        console.log(`No paper found for ${paperId}`);
         continue;
       }
 
@@ -109,7 +48,7 @@ async function main() {
         : "";
 
       papers.push({
-        id: id,
+        id: paperId,
         title,
         authors,
         date,
@@ -118,7 +57,7 @@ async function main() {
         keywords,
         abstract,
         downloads,
-        link: `https://ling.auf.net/lingbuzz/${id}`,
+        link: `https://ling.auf.net/lingbuzz/${paperId}`,
       });
     }
   } catch (e) {
@@ -134,4 +73,9 @@ async function main() {
   );
 }
 
-main();
+if (newIdsList.length > 0) {
+  await scrapePapers(newIdsList);
+  console.log("Scraping complete");
+} else {
+  console.log("No new papers to scrape");
+}
