@@ -8,6 +8,8 @@ import {
   parseAbstract,
 } from "./parseCenterElement";
 import { newIds } from "./newIds";
+import { loadPapers } from "./loadPapers";
+import { updatePapers } from "./updatePapers";
 
 const papers: Paper[] = [];
 
@@ -64,9 +66,14 @@ async function scrapePapers(ids: number[] = []) {
     console.log(e);
   }
 
+  let currentPapers = await loadPapers();
+  const updatedPapersData = await updatePapers(papers, currentPapers);
+
   Bun.write(
     "./papers.json",
-    JSON.stringify(papers)
+    JSON.stringify(
+      updatedPapersData.filter((item) => Object.keys(item).length !== 0)
+    )
       .replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
       .replace(/\s+/g, " ")
       .trim()
