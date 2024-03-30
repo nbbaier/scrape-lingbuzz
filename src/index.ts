@@ -44,7 +44,6 @@ export function parseCenterElement(document: Document): string[] {
 export function parseTable(document: Document): Map<string, string> {
   const table = document.querySelector("body > table");
   if (!table) {
-    console.error("Table not found in the document.");
     return new Map();
   }
 
