@@ -4,6 +4,7 @@ run-name: Scraping
 on:
   schedule:
     - cron: "1 0 * * *"
+    - cron: "20 1 * * *"
 
 jobs:
   scraper:
