@@ -19,8 +19,7 @@ export async function newIds(): Promise<number[]> {
       const match = regex.exec(href);
       return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
     })
-    .map((id) => parseInt(id))
-    .filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
+    .map((id) => parseInt(id));
 
   const currentIds = (await loadPapers())
     .map((paper) => paper.id)
@@ -30,5 +29,3 @@ export async function newIds(): Promise<number[]> {
 
   return newIds;
 }
-
-newIds();
