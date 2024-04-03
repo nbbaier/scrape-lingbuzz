@@ -10,6 +10,28 @@ import {
 import { newIds } from "./newIds";
 import { loadPapers } from "./loadPapers";
 import { updatePapers } from "./updatePapers";
+import path from "path";
+
+// const { log } = console;
+// [`debug`, `log`, `warn`, `error`, `table`, `dir`].forEach(
+//   (methodName: keyof Console) => {
+//     const originalLoggingMethod = console[methodName];
+//     console[methodName] = (...args: any[]) => {
+//       const originalPrepareStackTrace = Error.prepareStackTrace;
+//       Error.prepareStackTrace = (_, stack) => stack;
+//       const callee = new Error().stack?.[1];
+//       Error.prepareStackTrace = originalPrepareStackTrace;
+//       const relativeFileName = path
+//         .relative(process.cwd(), callee?.getFileName() || "")
+//         .replace(process.cwd(), "")
+//         .replace("file:/", "");
+//       // Log in dark grey
+//       const label = `${relativeFileName}:${callee?.getLineNumber() || ""}`;
+//       log(`🪵 \x1b[90m%s\x1b[0m`, label);
+//       originalLoggingMethod(...args);
+//     };
+//   }
+// );
 
 const papers: Paper[] = [];
 
@@ -81,6 +103,7 @@ async function scrapePapers(ids: number[] = []) {
 }
 
 if (newIdsList.length > 0) {
+  console.log("Scraping new papers");
   await scrapePapers(newIdsList);
   console.log("Scraping complete");
 } else {
