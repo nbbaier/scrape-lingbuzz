@@ -1,37 +1,15 @@
 import { JSDOM } from "jsdom";
-import type { Paper } from "./types";
 import { getHtml } from "./getHtml";
-import { splitKeywords } from "./splitKeywords";
+import { loadPapers } from "./loadPapers";
+import { newIds, newestId } from "./newIds";
 import {
+  parseAbstract,
   parseCenterElement,
   parseTable,
-  parseAbstract,
 } from "./parseCenterElement";
-import { newIds } from "./newIds";
-import { loadPapers } from "./loadPapers";
+import { splitKeywords } from "./splitKeywords";
+import type { Paper } from "./types";
 import { updatePapers } from "./updatePapers";
-import path from "path";
-
-// const { log } = console;
-// [`debug`, `log`, `warn`, `error`, `table`, `dir`].forEach(
-//   (methodName: keyof Console) => {
-//     const originalLoggingMethod = console[methodName];
-//     console[methodName] = (...args: any[]) => {
-//       const originalPrepareStackTrace = Error.prepareStackTrace;
-//       Error.prepareStackTrace = (_, stack) => stack;
-//       const callee = new Error().stack?.[1];
-//       Error.prepareStackTrace = originalPrepareStackTrace;
-//       const relativeFileName = path
-//         .relative(process.cwd(), callee?.getFileName() || "")
-//         .replace(process.cwd(), "")
-//         .replace("file:/", "");
-//       // Log in dark grey
-//       const label = `${relativeFileName}:${callee?.getLineNumber() || ""}`;
-//       log(`🪵 \x1b[90m%s\x1b[0m`, label);
-//       originalLoggingMethod(...args);
-//     };
-//   }
-// );
 
 const papers: Paper[] = [];
 
@@ -102,7 +80,15 @@ async function scrapePapers(ids: number[] = []) {
   );
 }
 
-if (newIdsList.length > 0) {
+const currentPapers = await loadPapers();
+
+if (currentPapers.length === 0) {
+  const newestPaper = await newestId();
+  const ids = Array.from({ length: newestPaper - 1 }, (_, i) => i + 2);
+  console.log("Scraping all papers");
+  await scrapePapers(ids);
+  console.log("Scraping complete");
+} else if (newIdsList.length > 0) {
   console.log("Scraping new papers");
   await scrapePapers(newIdsList);
   console.log("Scraping complete");
