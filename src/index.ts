@@ -11,59 +11,72 @@ import { splitKeywords } from "./splitKeywords";
 import type { Paper } from "./types";
 import { updatePapers } from "./updatePapers";
 
-const papers: Paper[] = [];
+function chunkArray(array: number[], chunkSize: number): number[][] {
+  const results = [];
+  while (array.length) {
+    results.push(array.splice(0, chunkSize));
+  }
+  return results;
+}
 
+const papers: Paper[] = [];
 const newIdsList = await newIds();
 
 async function scrapePapers(ids: number[] = []) {
-  try {
-    for (const id of ids) {
-      const paperId = id.toString().padStart(6, "0");
-      const html = await getHtml(paperId);
-      const document = new JSDOM(html).window.document;
+  const chunkedIds = chunkArray(ids, 5);
 
-      const pageTitle = document.querySelector("title")?.textContent;
+  for (const chunk of chunkedIds) {
+    await Promise.all(
+      chunk.map(async (id) => {
+        try {
+          const paperId = id.toString().padStart(6, "0");
+          const html = await getHtml(paperId);
+          const document = new JSDOM(html).window.document;
 
-      if (pageTitle === "lingbuzz - archive of linguistics articles") {
-        console.log(`No paper found for ${paperId}`);
-        continue;
-      }
+          const pageTitle = document.querySelector("title")?.textContent;
 
-      const header = parseCenterElement(document);
-      const rowTexts = parseTable(document);
+          if (pageTitle === "lingbuzz - archive of linguistics articles") {
+            console.log(`No paper found for ${paperId}`);
+            return;
+          }
 
-      const title = header[0].replace(/"/g, "'").trim();
-      const authors = header[1].split(",").map((author) => author.trim());
-      const date = header[2] ? header[2].trim() : "";
-      const published_in = rowTexts.get("Published in") || "";
-      const keywords_raw = rowTexts.get("keywords") || "";
-      const keywords = splitKeywords(keywords_raw);
-      const downloads = rowTexts.get("Downloaded")
-        ? parseInt(rowTexts.get("Downloaded")?.split(" ")[0] as string)
-        : 0;
+          const header = parseCenterElement(document);
+          const rowTexts = parseTable(document);
 
-      const rawAbstract = document.querySelector("body")?.childNodes[5]
-        .textContent as string;
+          const title = header[0].replace(/"/g, "'").trim();
+          const authors = header[1].split(",").map((author) => author.trim());
+          const date = header[2] ? header[2].trim() : "";
+          const published_in = rowTexts.get("Published in") || "";
+          const keywords_raw = rowTexts.get("keywords") || "";
+          const keywords = splitKeywords(keywords_raw);
+          const downloads = rowTexts.get("Downloaded")
+            ? parseInt(rowTexts.get("Downloaded")?.split(" ")[0] as string)
+            : 0;
 
-      const abstract = !/^Format:/.test(rawAbstract)
-        ? parseAbstract(rawAbstract)
-        : "";
+          const rawAbstract = document.querySelector("body")?.childNodes[5]
+            .textContent as string;
 
-      papers.push({
-        id: paperId,
-        title,
-        authors,
-        date,
-        published_in,
-        keywords_raw,
-        keywords,
-        abstract,
-        downloads,
-        link: `https://ling.auf.net/lingbuzz/${paperId}`,
-      });
-    }
-  } catch (e) {
-    console.log(e);
+          const abstract = !/^Format:/.test(rawAbstract)
+            ? parseAbstract(rawAbstract)
+            : "";
+
+          papers.push({
+            id: paperId,
+            title,
+            authors,
+            date,
+            published_in,
+            keywords_raw,
+            keywords,
+            abstract,
+            downloads,
+            link: `https://ling.auf.net/lingbuzz/${paperId}`,
+          });
+        } catch (e) {
+          console.log(`Failed to scrape paper with id ${id}:`, e);
+        }
+      })
+    );
   }
 
   let currentPapers = await loadPapers();
@@ -80,8 +93,6 @@ async function scrapePapers(ids: number[] = []) {
   );
 }
 
-await scrapePapers([6350]);
-
 // const currentPapers = await loadPapers();
 
 // if (currentPapers.length === 0) {
@@ -97,3 +108,4 @@ await scrapePapers([6350]);
 // } else {
 //   console.log("No new papers to scrape");
 // }
+await scrapePapers(Array.from({ length: 100 }, (_, i) => i + 2));
