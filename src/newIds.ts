@@ -1,5 +1,6 @@
 import { JSDOM } from "jsdom";
 import { loadPapers } from "./loadPapers";
+import type { Paper } from "./types";
 
 export async function newIds(): Promise<number[]> {
   const res = await fetch("https://ling.auf.net/");
@@ -19,9 +20,21 @@ export async function newIds(): Promise<number[]> {
       const match = regex.exec(href);
       return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
     })
-    .map((id) => parseInt(id));
+    .map((id) => parseInt(id))
+    .filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
 
-  const currentIds = (await loadPapers())
+  let currentPapers: Paper[] = [];
+
+  try {
+    currentPapers = await loadPapers();
+    if (currentPapers.length === 0) {
+      console.log("No papers found in papers.json");
+    }
+  } catch (e) {
+    console.error("Failed to load papers:", e);
+  }
+
+  const currentIds = currentPapers
     .map((paper) => paper.id)
     .map((id) => parseInt(id));
 
