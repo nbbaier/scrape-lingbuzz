@@ -3,6 +3,13 @@ import type { Paper } from "./types";
 
 const PAPERS_FILE_PATH = "./papers.json";
 
+/**
+ * Loads the papers data from a JSON file.
+ *
+ * @param papersFilePath - The path to the papers JSON file. Defaults to "./papers.json".
+ * @returns A promise that resolves to an array of Paper objects.
+ * @throws If there is an error loading the papers data.
+ */
 export async function loadPapers(
   papersFilePath = PAPERS_FILE_PATH
 ): Promise<Paper[]> {

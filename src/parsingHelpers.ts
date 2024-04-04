@@ -1,5 +1,11 @@
 import { JSDOM } from "jsdom";
 
+/**
+ * Parses the center element in a document and returns an array of strings.
+ *
+ * @param document - The document to parse.
+ * @returns An array of strings representing the parsed center element.
+ */
 export function parseCenterElement(document: Document): string[] {
   const centerElement = document.querySelector("body > center");
   if (!centerElement) return [];
@@ -18,6 +24,12 @@ export function parseCenterElement(document: Document): string[] {
   return lines;
 }
 
+/**
+ * Parses a table in a document and returns a map of key-value pairs.
+ *
+ * @param document - The document to parse.
+ * @returns A map of key-value pairs representing the parsed table.
+ */
 export function parseTable(document: Document): Map<string, string> {
   const table = document.querySelector("body > table");
   if (!table) {
@@ -40,6 +52,13 @@ export function parseTable(document: Document): Map<string, string> {
   return tableDataMap;
 }
 
+/**
+ * Parses the raw abstract string by replacing double quotes with single quotes,
+ * newlines with spaces, and multiple spaces with a single space.
+ *
+ * @param rawAbstract - The raw abstract string to be parsed.
+ * @returns The parsed abstract string.
+ */
 export function parseAbstract(rawAbstract: string): string {
   return rawAbstract
     .replace(/"/g, "'")

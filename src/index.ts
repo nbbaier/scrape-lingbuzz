@@ -6,12 +6,20 @@ import {
   parseAbstract,
   parseCenterElement,
   parseTable,
-} from "./parseCenterElement";
+} from "./parsingHelpers";
 import { splitKeywords } from "./splitKeywords";
 import type { Paper } from "./types";
 import { updatePapers } from "./updatePapers";
 
-function chunkArray(array: number[], chunkSize: number): number[][] {
+/**
+ * Splits an array into chunks of a specified size.
+ *
+ * @template T - The type of elements in the array.
+ * @param {T[]} array - The array to be chunked.
+ * @param {number} chunkSize - The size of each chunk.
+ * @returns {T[][]} - An array of chunks, where each chunk is an array of elements.
+ */
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   const results = [];
   while (array.length) {
     results.push(array.splice(0, chunkSize));
@@ -22,6 +30,17 @@ function chunkArray(array: number[], chunkSize: number): number[][] {
 const papers: Paper[] = [];
 const newIdsList = await newIds();
 
+/**
+ * Scrapes papers from the lingbuzz website based on the provided IDs.
+ *
+ * @param ids - An array of numbers representing the IDs of the papers to scrape. Defaults to an empty array.
+ * @returns A Promise that resolves to an array of Paper objects containing the scraped data.
+ * @throws If there is an error while scraping a paper.
+ *
+ * @example
+ * // Scrape papers with IDs [1, 2, 3]
+ * await scrapePapers([1, 2, 3]);
+ */
 async function scrapePapers(ids: number[] = []) {
   const chunkedIds = chunkArray(ids, 5);
 
