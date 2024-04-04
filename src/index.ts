@@ -93,19 +93,18 @@ async function scrapePapers(ids: number[] = []) {
   );
 }
 
-// const currentPapers = await loadPapers();
+const currentPapers = await loadPapers();
 
-// if (currentPapers.length === 0) {
-//   const newestPaper = await newestId();
-//   const ids = Array.from({ length: newestPaper - 1 }, (_, i) => i + 2);
-//   console.log("Scraping all papers");
-//   await scrapePapers(ids);
-//   console.log("Scraping complete");
-// } else if (newIdsList.length > 0) {
-//   console.log("Scraping new papers");
-//   await scrapePapers(newIdsList);
-//   console.log("Scraping complete");
-// } else {
-//   console.log("No new papers to scrape");
-// }
-await scrapePapers(Array.from({ length: 100 }, (_, i) => i + 2));
+if (currentPapers.length === 0) {
+  const newestPaper = await newestId();
+  const ids = Array.from({ length: newestPaper - 1 }, (_, i) => i + 2);
+  console.log("Scraping all papers");
+  await scrapePapers(ids);
+  console.log("Scraping complete");
+} else if (newIdsList.length > 0) {
+  console.log("Scraping new papers");
+  await scrapePapers(newIdsList);
+  console.log("Scraping complete");
+} else {
+  console.log("No new papers to scrape");
+}
