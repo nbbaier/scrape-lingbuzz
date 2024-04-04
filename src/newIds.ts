@@ -34,9 +34,7 @@ export async function newIds(): Promise<number[]> {
     console.error("Failed to load papers:", e);
   }
 
-  const currentIds = currentPapers
-    .map((paper) => paper.id)
-    .map((id) => parseInt(id));
+  const currentIds = currentPapers.map((paper) => paper.id);.map((id) => parseInt(id));
 
   const newIds = hrefs.filter((id) => !currentIds.includes(id));
 
