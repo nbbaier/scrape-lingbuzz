@@ -1,13 +1,13 @@
 {
   "name": "scrape-lingbuzz",
   "module": "src/index.ts",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
+  "type": "module",
   "dependencies": {
     "@types/jsdom": "^21.1.6",
     "jsdom": "^24.0.0"
