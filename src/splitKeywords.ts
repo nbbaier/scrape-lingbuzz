@@ -9,11 +9,10 @@
  * @returns {string[]} An array of individual keywords.
  */
 export function splitKeywords(inputString: string): string[] {
-  const splitRegex = /,(?![^{\[\(<]*[\]\)}>])/;
-  const resplitRegex = / ·|-|–||\/ /;
-  return inputString
-    .split(splitRegex)
-    .map((s) => s.split(resplitRegex))
-    .flat()
-    .map((s) => s.trim());
+	const splitRegex = /,(?![^{\[\(<]*[\]\)}>])/;
+	const resplitRegex = / ·|-|–||\/ /;
+	return inputString
+		.split(splitRegex)
+		.flatMap((s) => s.split(resplitRegex))
+		.map((s) => s.trim());
 }

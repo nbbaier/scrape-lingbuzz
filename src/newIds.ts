@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { loadPapers } from "./loadPapers";
+import { loadPapers } from "./utils/utils";
 import type { Paper } from "./types";
 
 /**
@@ -8,27 +8,27 @@ import type { Paper } from "./types";
  * @returns A promise that resolves to an array of numbers representing the front page IDs.
  */
 async function getFrontPageIds(): Promise<number[]> {
-  const res = await fetch("https://ling.auf.net/");
-  const html = await res.text();
-  const document = new JSDOM(html).window.document;
+	const res = await fetch("https://ling.auf.net/");
+	const html = await res.text();
+	const document = new JSDOM(html).window.document;
 
-  const mainTable = document.body
-    .querySelectorAll("table")[2]
-    .querySelector("td > table");
+	const mainTable = document.body
+		.querySelectorAll("table")[2]
+		.querySelector("td > table");
 
-  const regex = /\/lingbuzz\/(\d{6})/;
+	const regex = /\/lingbuzz\/(\d{6})/;
 
-  const hrefs = Array.from(mainTable?.querySelectorAll("a") || [])
-    .map((a) => a.href)
-    .filter((href) => regex.test(href)) // filter hrefs that match the regex
-    .map((href) => {
-      const match = regex.exec(href);
-      return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
-    })
-    .map((id) => parseInt(id))
-    .filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
+	const hrefs = Array.from(mainTable?.querySelectorAll("a") || [])
+		.map((a) => a.href)
+		.filter((href) => regex.test(href)) // filter hrefs that match the regex
+		.map((href) => {
+			const match = regex.exec(href);
+			return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
+		})
+		.map((id) => Number.parseInt(id))
+		.filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
 
-  return hrefs;
+	return hrefs;
 }
 
 /**
@@ -37,12 +37,12 @@ async function getFrontPageIds(): Promise<number[]> {
  * @returns A promise that resolves to the newest ID as a number.
  */
 export async function newestId(): Promise<number> {
-  const res = await fetch("https://ling.auf.net/");
-  const html = await res.text();
+	const res = await fetch("https://ling.auf.net/");
+	const html = await res.text();
 
-  const hrefs = await getFrontPageIds();
+	const hrefs = await getFrontPageIds();
 
-  return hrefs.sort((a, b) => b - a)[0];
+	return hrefs.sort((a, b) => b - a)[0];
 }
 
 /**
@@ -51,25 +51,25 @@ export async function newestId(): Promise<number> {
  * @returns A promise that resolves to an array of new IDs.
  */
 export async function newIds(): Promise<number[]> {
-  const hrefs = await getFrontPageIds();
+	const hrefs = await getFrontPageIds();
 
-  let currentPapers: Paper[] = [];
+	let currentPapers: Paper[] = [];
 
-  try {
-    currentPapers = await loadPapers();
-    if (currentPapers.length === 0) {
-      console.log("No papers found in papers.json");
-      return [];
-    }
-  } catch (e) {
-    console.error("Failed to load papers:", e);
-  }
+	try {
+		currentPapers = await loadPapers();
+		if (currentPapers.length === 0) {
+			console.log("No papers found in papers.json");
+			return [];
+		}
+	} catch (e) {
+		console.error("Failed to load papers:", e);
+	}
 
-  const currentIds = currentPapers
-    .map((paper) => paper.id)
-    .map((id) => parseInt(id));
+	const currentIds = currentPapers
+		.map((paper) => paper.id)
+		.map((id) => Number.parseInt(id));
 
-  const newIds = hrefs.filter((id) => !currentIds.includes(id));
+	const newIds = hrefs.filter((id) => !currentIds.includes(id));
 
-  return newIds;
+	return newIds;
 }

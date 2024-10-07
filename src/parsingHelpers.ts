@@ -7,21 +7,21 @@ import { JSDOM } from "jsdom";
  * @returns An array of strings representing the parsed center element.
  */
 export function parseCenterElement(document: Document): string[] {
-  const centerElement = document.querySelector("body > center");
-  if (!centerElement) return [];
+	const centerElement = document.querySelector("body > center");
+	if (!centerElement) return [];
 
-  const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
+	const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
 
-  const lines = linesWithHtml
-    .map((line) => {
-      const tempDom = new JSDOM(`<div>${line}</div>`);
-      return (
-        tempDom.window.document.querySelector("div")?.textContent?.trim() || ""
-      );
-    })
-    .filter(Boolean); // Filter out any empty strings
+	const lines = linesWithHtml
+		.map((line) => {
+			const tempDom = new JSDOM(`<div>${line}</div>`);
+			return (
+				tempDom.window.document.querySelector("div")?.textContent?.trim() || ""
+			);
+		})
+		.filter(Boolean); // Filter out any empty strings
 
-  return lines;
+	return lines;
 }
 
 /**
@@ -31,25 +31,25 @@ export function parseCenterElement(document: Document): string[] {
  * @returns A map of key-value pairs representing the parsed table.
  */
 export function parseTable(document: Document): Map<string, string> {
-  const table = document.querySelector("body > table");
-  if (!table) {
-    return new Map();
-  }
+	const table = document.querySelector("body > table");
+	if (!table) {
+		return new Map();
+	}
 
-  const tableDataMap = new Map<string, string>();
-  table.querySelectorAll("tr").forEach((row) => {
-    const cells = Array.from(row.querySelectorAll("td"))
-      .map((td) => td.textContent?.trim())
-      .filter(Boolean); // This removes any falsy values, including empty strings
+	const tableDataMap = new Map<string, string>();
+	for (const row of table.querySelectorAll("tr")) {
+		const cells = Array.from(row.querySelectorAll("td"))
+			.map((td) => td.textContent?.trim())
+			.filter(Boolean); // This removes any falsy values, including empty strings
 
-    if (cells.length >= 2) {
-      const key = (cells[0] ?? "").replace(":", "");
-      const value = cells[1] || "";
-      tableDataMap.set(key, value);
-    }
-  });
+		if (cells.length >= 2) {
+			const key = (cells[0] ?? "").replace(":", "");
+			const value = cells[1] || "";
+			tableDataMap.set(key, value);
+		}
+	}
 
-  return tableDataMap;
+	return tableDataMap;
 }
 
 /**
@@ -60,8 +60,8 @@ export function parseTable(document: Document): Map<string, string> {
  * @returns The parsed abstract string.
  */
 export function parseAbstract(rawAbstract: string): string {
-  return rawAbstract
-    .replace(/"/g, "'")
-    .replace(/\n/g, " ")
-    .replace(/\s+/g, " ");
+	return rawAbstract
+		.replace(/"/g, "'")
+		.replace(/\n/g, " ")
+		.replace(/\s+/g, " ");
 }
