@@ -1,7 +1,10 @@
 name: run-jq
 run-name: running jq
 
-on: [workflow_dispatch]
+on:
+  push:
+    branches: "nbbaier-jq"
+  workflow_dispatch:
 
 jobs:
   jq-runner:
