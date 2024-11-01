@@ -1,0 +1,16 @@
+name: run jq
+run-name: running jq
+
+on:
+  workflow_dispatch: # adding the workflow_dispatch so it can be triggered manually
+
+jobs:
+  jq-runner:
+    runs-on: ubuntu-latest
+    permissions: # Job-level permissions configuration starts here
+      contents: read # 'read' access to repository contents
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Run jq
+        run: jq --version
