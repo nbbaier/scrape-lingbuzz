@@ -1,8 +1,7 @@
-name: run jq
+name: run-jq
 run-name: running jq
 
-on:
-  workflow_dispatch: # adding the workflow_dispatch so it can be triggered manually
+on: [workflow_dispatch]
 
 jobs:
   jq-runner:
