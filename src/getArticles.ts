@@ -1,10 +1,6 @@
 import type { Article } from "./types";
 import { BASE_URL } from "./constants";
-import {
-	extractArticlesFromRow,
-	generateUrls,
-	getPageRows,
-} from "./utils/utils";
+import { extractArticlesFromRow, generateUrls, getPageRows } from "./utils/utils";
 
 const pagesToScrape = await generateUrls(BASE_URL);
 const allArticles: Article[] = [];

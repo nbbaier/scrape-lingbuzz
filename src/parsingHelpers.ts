@@ -15,9 +15,7 @@ export function parseCenterElement(document: Document): string[] {
 	const lines = linesWithHtml
 		.map((line) => {
 			const tempDom = new JSDOM(`<div>${line}</div>`);
-			return (
-				tempDom.window.document.querySelector("div")?.textContent?.trim() || ""
-			);
+			return tempDom.window.document.querySelector("div")?.textContent?.trim() || "";
 		})
 		.filter(Boolean); // Filter out any empty strings
 
@@ -60,8 +58,5 @@ export function parseTable(document: Document): Map<string, string> {
  * @returns The parsed abstract string.
  */
 export function parseAbstract(rawAbstract: string): string {
-	return rawAbstract
-		.replace(/"/g, "'")
-		.replace(/\n/g, " ")
-		.replace(/\s+/g, " ");
+	return rawAbstract.replace(/"/g, "'").replace(/\n/g, " ").replace(/\s+/g, " ");
 }

@@ -85,9 +85,7 @@ export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
 	return Array.from(rows);
 }
 
-export const extractArticlesFromRow = (
-	row: HTMLTableRowElement,
-): Article | null => {
+export const extractArticlesFromRow = (row: HTMLTableRowElement): Article | null => {
 	const cells = row.querySelectorAll("td");
 	if (cells.length < 4) {
 		return null;
@@ -137,9 +135,7 @@ export const extractArticlesFromRow = (
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
-export async function loadPapers(
-	papersFilePath = PAPERS_FILE_PATH,
-): Promise<Paper[]> {
+export async function loadPapers(papersFilePath = PAPERS_FILE_PATH): Promise<Paper[]> {
 	try {
 		if (!fs.existsSync(PAPERS_FILE_PATH)) {
 			console.log("Creating papers.json");
