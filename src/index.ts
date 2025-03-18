@@ -44,7 +44,7 @@ async function scrapePapers(ids: number[] = []) {
 			chunk.map(async (id) => {
 				try {
 					const paperId = id.toString().padStart(6, "0");
-					const html = await getHtml(paperId);
+					const html = await getPaperHtml(paperId);
 					const document = new JSDOM(html).window.document;
 
 					const pageTitle = document.querySelector("title")?.textContent;
@@ -64,7 +64,7 @@ async function scrapePapers(ids: number[] = []) {
 					const keywords_raw = rowTexts.get("keywords") || "";
 					const keywords = splitKeywords(keywords_raw);
 					const downloads = rowTexts.get("Downloaded")
-						? parseInt(rowTexts.get("Downloaded")?.split(" ")[0] as string)
+						? Number.parseInt(rowTexts.get("Downloaded")?.split(" ")[0] as string)
 						: 0;
 
 					const rawAbstract = document.querySelector("body")?.childNodes[5]
@@ -99,6 +99,7 @@ async function scrapePapers(ids: number[] = []) {
 	Bun.write(
 		"./papers.json",
 		JSON.stringify(updatedPapersData.filter((item) => Object.keys(item).length !== 0))
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
 			.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
 			.replace(/\s+/g, " ")
 			.trim(),
