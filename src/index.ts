@@ -1,26 +1,9 @@
 import { JSDOM } from "jsdom";
-import { getPaperHtml, loadPapers } from "./utils/utils";
 import { newIds, newestId } from "./newIds";
 import { parseAbstract, parseCenterElement, parseTable } from "./parsingHelpers";
 import { splitKeywords } from "./splitKeywords";
 import type { Paper } from "./types";
-import { updatePapers } from "./utils/utils";
-
-/**
- * Splits an array into chunks of a specified size.
- *
- * @template T - The type of elements in the array...
- * @param {T[]} array - The array to be chunked.
- * @param {number} chunkSize - The size of each chunk.
- * @returns {T[][]} - An array of chunks, where each chunk is an array of elements.
- */
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-	const results = [];
-	while (array.length) {
-		results.push(array.splice(0, chunkSize));
-	}
-	return results;
-}
+import { chunkArray, getPaperHtml, loadPapers, updatePapers } from "./utils/utils";
 
 const papers: Paper[] = [];
 const newIdsList = await newIds();
