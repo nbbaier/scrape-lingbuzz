@@ -4,15 +4,15 @@
     "": {
       "name": "bun-init--y-",
       "dependencies": {
-        "@types/jsdom": "^21.1.6",
-        "jsdom": "^24.0.0",
+        "@types/jsdom": "^21.1.7",
+        "jsdom": "^24.1.3",
       },
       "devDependencies": {
         "@biomejs/biome": "1.9.4",
         "@types/bun": "latest",
       },
       "peerDependencies": {
-        "typescript": "^5.0.0",
+        "typescript": "^5.4.3",
       },
     },
   },
