@@ -9,7 +9,7 @@
  * @returns {string[]} An array of individual keywords.
  */
 export function splitKeywords(inputString: string): string[] {
-	const splitRegex = /,(?![^{\[\(<]*[\]\)}>])/;
+	const splitRegex = /,(?![^{[(<]*[\])}>])/;
 	const resplitRegex = / ·|-|–||\/ /;
 	return inputString
 		.split(splitRegex)

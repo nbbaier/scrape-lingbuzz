@@ -1,6 +1,9 @@
 import { JSDOM } from "jsdom";
-import { loadPapers } from "./utils/utils";
+import { BASE_URL } from "./constants";
 import type { Paper } from "./types";
+import { logger } from "./utils/logger";
+import { fetchWithRetry } from "./utils/retry";
+import { loadPapers } from "./utils/utils";
 
 /**
  * Retrieves the front page IDs from the website "https://ling.auf.net/".
@@ -8,24 +11,29 @@ import type { Paper } from "./types";
  * @returns A promise that resolves to an array of numbers representing the front page IDs.
  */
 async function getFrontPageIds(): Promise<number[]> {
-	const res = await fetch("https://ling.auf.net/");
+	const res = await fetchWithRetry(BASE_URL);
 	const html = await res.text();
 	const document = new JSDOM(html).window.document;
 
 	const mainTable = document.body
 		.querySelectorAll("table")[2]
-		.querySelector("td > table");
+		?.querySelector("td > table");
+
+	if (!mainTable) {
+		logger.error("Could not find main table on front page");
+		return [];
+	}
 
 	const regex = /\/lingbuzz\/(\d{6})/;
 
-	const hrefs = Array.from(mainTable?.querySelectorAll("a") || [])
+	const hrefs = Array.from(mainTable.querySelectorAll("a"))
 		.map((a) => a.href)
 		.filter((href) => regex.test(href)) // filter hrefs that match the regex
 		.map((href) => {
 			const match = regex.exec(href);
 			return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
 		})
-		.map((id) => Number.parseInt(id))
+		.map((id) => Number.parseInt(id, 10))
 		.filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
 
 	return hrefs;
@@ -37,12 +45,14 @@ async function getFrontPageIds(): Promise<number[]> {
  * @returns A promise that resolves to the newest ID as a number.
  */
 export async function newestId(): Promise<number> {
-	const res = await fetch("https://ling.auf.net/");
-	const html = await res.text();
-
 	const hrefs = await getFrontPageIds();
 
-	return hrefs.sort((a, b) => b - a)[0];
+	if (hrefs.length === 0) {
+		logger.error("No paper IDs found on front page");
+		return 0;
+	}
+
+	return Math.max(...hrefs);
 }
 
 /**
@@ -58,18 +68,21 @@ export async function newIds(): Promise<number[]> {
 	try {
 		currentPapers = await loadPapers();
 		if (currentPapers.length === 0) {
-			console.log("No papers found in papers.json");
+			logger.info("No papers found in papers.json");
 			return [];
 		}
 	} catch (e) {
-		console.error("Failed to load papers:", e);
+		logger.error("Failed to load papers:", e);
+		return [];
 	}
 
-	const currentIds = currentPapers
-		.map((paper) => paper.id)
-		.map((id) => Number.parseInt(id));
+	const currentIds = new Set(currentPapers.map((paper) => Number.parseInt(paper.id, 10)));
 
-	const newIds = hrefs.filter((id) => !currentIds.includes(id));
+	const newPaperIds = hrefs.filter((id) => !currentIds.has(id));
 
-	return newIds;
+	if (newPaperIds.length > 0) {
+		logger.info(`Found ${newPaperIds.length} new paper IDs on front page`);
+	}
+
+	return newPaperIds;
 }
