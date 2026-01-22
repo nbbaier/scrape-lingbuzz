@@ -1,15 +1,18 @@
+import { MAX_RETRIES, RETRY_BASE_DELAY_MS } from "../constants";
+import { logger } from "./logger";
+
 /**
  * Wraps an async function with retry logic using exponential backoff.
  *
  * @param fn - The async function to retry.
- * @param maxRetries - Maximum number of retry attempts (default: 3).
- * @param baseDelayMs - Base delay in milliseconds before first retry (default: 1000).
+ * @param maxRetries - Maximum number of retry attempts (default: MAX_RETRIES from constants).
+ * @param baseDelayMs - Base delay in milliseconds before first retry (default: RETRY_BASE_DELAY_MS from constants).
  * @returns A promise that resolves with the function result or rejects after all retries.
  */
 export async function withRetry<T>(
 	fn: () => Promise<T>,
-	maxRetries = 3,
-	baseDelayMs = 1000,
+	maxRetries = MAX_RETRIES,
+	baseDelayMs = RETRY_BASE_DELAY_MS,
 ): Promise<T> {
 	let lastError: Error | undefined;
 
@@ -21,8 +24,8 @@ export async function withRetry<T>(
 
 			if (attempt < maxRetries) {
 				const delay = baseDelayMs * 2 ** attempt;
-				console.log(
-					`[RETRY] Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`,
+				logger.info(
+					`Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`,
 				);
 				await new Promise((resolve) => setTimeout(resolve, delay));
 			}
@@ -37,13 +40,13 @@ export async function withRetry<T>(
  *
  * @param url - The URL to fetch.
  * @param options - Optional fetch options.
- * @param maxRetries - Maximum number of retry attempts.
+ * @param maxRetries - Maximum number of retry attempts (default: MAX_RETRIES from constants).
  * @returns A promise that resolves to the Response.
  */
 export async function fetchWithRetry(
 	url: string,
 	options?: RequestInit,
-	maxRetries = 3,
+	maxRetries = MAX_RETRIES,
 ): Promise<Response> {
 	return withRetry(async () => {
 		const response = await fetch(url, options);

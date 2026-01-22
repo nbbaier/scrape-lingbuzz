@@ -79,9 +79,11 @@ async function scrapePapers(ids: number[] = []) {
 					const keywords_raw = rowTexts.get("keywords") || "";
 					const keywords = splitKeywords(keywords_raw);
 					const downloadStr = rowTexts.get("Downloaded");
-					const downloads = downloadStr
-						? Number.parseInt(downloadStr.split(" ")[0], 10) || 0
-						: 0;
+					const downloads = (() => {
+						if (!downloadStr) return 0;
+						const match = downloadStr.match(/\d+/);
+						return match ? Number.parseInt(match[0], 10) || 0 : 0;
+					})();
 
 					const rawAbstract =
 						document.querySelector("body")?.childNodes[5]?.textContent ?? "";

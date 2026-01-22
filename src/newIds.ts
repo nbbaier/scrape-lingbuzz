@@ -15,9 +15,8 @@ async function getFrontPageIds(): Promise<number[]> {
 	const html = await res.text();
 	const document = new JSDOM(html).window.document;
 
-	const mainTable = document.body
-		.querySelectorAll("table")[2]
-		?.querySelector("td > table");
+	const tables = document.body.querySelectorAll("table");
+	const mainTable = tables.length > 2 ? tables[2].querySelector("td > table") : null;
 
 	if (!mainTable) {
 		logger.error("Could not find main table on front page");
