@@ -19,8 +19,7 @@ async function getFrontPageIds(): Promise<number[]> {
 	const mainTable = tables.length > 2 ? tables[2].querySelector("td > table") : null;
 
 	if (!mainTable) {
-		logger.error("Could not find main table on front page");
-		return [];
+		throw new Error("Failed to scrape front page: main table not found");
 	}
 
 	const regex = /\/lingbuzz\/(\d{6})/;
@@ -47,8 +46,7 @@ export async function newestId(): Promise<number> {
 	const hrefs = await getFrontPageIds();
 
 	if (hrefs.length === 0) {
-		logger.error("No paper IDs found on front page");
-		return 0;
+		throw new Error("No paper IDs found on front page");
 	}
 
 	return Math.max(...hrefs);

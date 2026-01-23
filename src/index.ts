@@ -119,7 +119,7 @@ async function scrapePapers(ids: number[] = []) {
 	Bun.write(
 		"./papers.json",
 		JSON.stringify(updatedPapersData.filter((item) => Object.keys(item).length !== 0))
-			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally stripping control characters from scraped text
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: control characters sometimes appear in scraped HTML content; strip them to ensure the generated papers.json contains only valid JSON text
 			.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
 			.replace(/\s+/g, " ")
 			.trim(),
