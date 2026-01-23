@@ -1,9 +1,28 @@
 import { JSDOM } from "jsdom";
-import { newIds, newestId } from "./newIds";
+import { CHUNK_SIZE, PAPER_ID_LENGTH, PAPER_ID_START } from "./constants";
+import { newestId, newIds } from "./newIds";
 import { parseAbstract, parseCenterElement, parseTable } from "./parsingHelpers";
 import { splitKeywords } from "./splitKeywords";
 import type { Paper } from "./types";
+import { logger } from "./utils/logger";
 import { chunkArray, getPaperHtml, loadPapers, updatePapers } from "./utils/utils";
+
+// Scraping statistics
+interface ScrapeStats {
+	startTime: number;
+	papersAttempted: number;
+	papersSucceeded: number;
+	papersFailed: number;
+	papersSkipped: number;
+}
+
+const stats: ScrapeStats = {
+	startTime: Date.now(),
+	papersAttempted: 0,
+	papersSucceeded: 0,
+	papersFailed: 0,
+	papersSkipped: 0,
+};
 
 const papers: Paper[] = [];
 const newIdsList = await newIds();
@@ -20,38 +39,54 @@ const newIdsList = await newIds();
  * await scrapePapers([1, 2, 3]);
  */
 async function scrapePapers(ids: number[] = []) {
-	const chunkedIds = chunkArray(ids, 5);
+	const chunkedIds = chunkArray(ids, CHUNK_SIZE);
 
 	for (const chunk of chunkedIds) {
 		await Promise.all(
 			chunk.map(async (id) => {
+				stats.papersAttempted++;
 				try {
-					const paperId = id.toString().padStart(6, "0");
+					const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
 					const html = await getPaperHtml(paperId);
 					const document = new JSDOM(html).window.document;
 
 					const pageTitle = document.querySelector("title")?.textContent;
 
 					if (pageTitle === "lingbuzz - archive of linguistics articles") {
-						console.log(`No paper found for ${paperId}`);
+						logger.info(`No paper found for ${paperId}`);
+						stats.papersSkipped++;
 						return;
 					}
 
 					const header = parseCenterElement(document);
 					const rowTexts = parseTable(document);
 
-					const title = header[0].replace(/"/g, "'").trim();
-					const authors = header[1].split(",").map((author) => author.trim());
-					const date = header[2] ? header[2].trim() : "";
+					// Safely access header elements with validation
+					const titleRaw = header[0];
+					const authorsRaw = header[1];
+					const dateRaw = header[2];
+
+					if (!titleRaw || !authorsRaw) {
+						logger.warn(`Missing header data for paper ${paperId}`);
+						stats.papersSkipped++;
+						return;
+					}
+
+					const title = titleRaw.replace(/"/g, "'").trim();
+					const authors = authorsRaw.split(",").map((author) => author.trim());
+					const date = dateRaw ? dateRaw.trim() : "";
 					const published_in = rowTexts.get("Published in") || "";
 					const keywords_raw = rowTexts.get("keywords") || "";
 					const keywords = splitKeywords(keywords_raw);
-					const downloads = rowTexts.get("Downloaded")
-						? Number.parseInt(rowTexts.get("Downloaded")?.split(" ")[0] as string)
-						: 0;
+					const downloadStr = rowTexts.get("Downloaded");
+					const downloads = (() => {
+						if (!downloadStr) return 0;
+						const match = downloadStr.match(/\d+/);
+						return match ? Number.parseInt(match[0], 10) || 0 : 0;
+					})();
 
-					const rawAbstract = document.querySelector("body")?.childNodes[5]
-						.textContent as string;
+					const rawAbstract =
+						document.querySelector("body")?.childNodes[5]?.textContent ?? "";
 
 					const abstract = !/^Format:/.test(rawAbstract)
 						? parseAbstract(rawAbstract)
@@ -69,8 +104,10 @@ async function scrapePapers(ids: number[] = []) {
 						downloads,
 						link: `https://ling.auf.net/lingbuzz/${paperId}`,
 					});
+					stats.papersSucceeded++;
 				} catch (e) {
-					console.log(`Failed to scrape paper with id ${id}:`, e);
+					stats.papersFailed++;
+					logger.error(`Failed to scrape paper with id ${id}`, e);
 				}
 			}),
 		);
@@ -82,25 +119,49 @@ async function scrapePapers(ids: number[] = []) {
 	Bun.write(
 		"./papers.json",
 		JSON.stringify(updatedPapersData.filter((item) => Object.keys(item).length !== 0))
-			// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: control characters sometimes appear in scraped HTML content; strip them to ensure the generated papers.json contains only valid JSON text
 			.replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
 			.replace(/\s+/g, " ")
 			.trim(),
 	);
 }
 
+/**
+ * Prints scraping statistics summary.
+ */
+function printStats() {
+	const durationMs = Date.now() - stats.startTime;
+	const durationSec = (durationMs / 1000).toFixed(2);
+
+	logger.info("=== Scraping Statistics ===");
+	logger.info(`Duration: ${durationSec}s`);
+	logger.info(`Papers attempted: ${stats.papersAttempted}`);
+	logger.info(`Papers succeeded: ${stats.papersSucceeded}`);
+	logger.info(`Papers failed: ${stats.papersFailed}`);
+	logger.info(`Papers skipped: ${stats.papersSkipped}`);
+
+	if (stats.papersAttempted > 0) {
+		const successRate = ((stats.papersSucceeded / stats.papersAttempted) * 100).toFixed(
+			1,
+		);
+		logger.info(`Success rate: ${successRate}%`);
+	}
+}
+
 const currentPapers = await loadPapers();
 
 if (currentPapers.length === 0) {
 	const newestPaper = await newestId();
-	const ids = Array.from({ length: newestPaper - 1 }, (_, i) => i + 2);
-	console.log("Scraping all papers");
+	const ids = Array.from({ length: newestPaper - 1 }, (_, i) => i + PAPER_ID_START);
+	logger.info("Scraping all papers");
 	await scrapePapers(ids);
-	console.log("Scraping complete");
+	logger.info("Scraping complete");
+	printStats();
 } else if (newIdsList.length > 0) {
-	console.log("Scraping new papers");
+	logger.info(`Scraping ${newIdsList.length} new papers`);
 	await scrapePapers(newIdsList);
-	console.log("Scraping complete");
+	logger.info("Scraping complete");
+	printStats();
 } else {
-	console.log("No new papers to scrape");
+	logger.info("No new papers to scrape");
 }

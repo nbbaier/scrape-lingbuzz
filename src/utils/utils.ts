@@ -1,17 +1,26 @@
-import { JSDOM } from "jsdom";
 import fs from "node:fs";
+import { JSDOM } from "jsdom";
+import {
+	BASE_URL,
+	PAGINATION_FIRST_START,
+	PAGINATION_INCREMENT,
+	PAGINATION_SECOND_START,
+	PAPERS_FILE_PATH,
+} from "../constants";
 import type { Article, Author, Paper } from "../types";
-import { BASE_URL, PAPERS_FILE_PATH } from "../constants";
+import { logger } from "./logger";
+import { fetchWithRetry } from "./retry";
 
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
+ * Uses retry logic with exponential backoff for resilience.
  *
  * @param id - The ID of the paper to retrieve HTML content for.
  * @returns A Promise that resolves to the retrieved HTML content.
  */
 export async function getPaperHtml(id: string): Promise<string> {
-	const res = await fetch(`https://ling.auf.net/lingbuzz/${id}`);
-	console.log(`Getting paper ${id}`);
+	logger.info(`Fetching paper ${id}`);
+	const res = await fetchWithRetry(`https://ling.auf.net/lingbuzz/${id}`);
 	return res.text();
 }
 
@@ -23,7 +32,7 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
 	const paperCountElement = document.body.querySelector("center > b > a");
 
 	if (!paperCountElement) {
-		console.error("Paper count element not found");
+		logger.error("Paper count element not found");
 		process.exit(1);
 	}
 
@@ -32,7 +41,7 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
 	const paperCount = numbers.at(-1);
 
 	if (!paperCount) {
-		console.error("Paper count not found");
+		logger.error("Paper count not found");
 		process.exit(1);
 	}
 
@@ -46,15 +55,15 @@ export async function generateUrls(
 	const limit = customLimit || (await getPaperCount(baseURL));
 
 	const urls: string[] = [];
-	let start = 1;
+	let start = PAGINATION_FIRST_START;
 
 	while (start <= limit) {
 		urls.push(`${baseURL}/lingbuzz/_listing?start=${start}`);
 
-		if (start === 1) {
-			start = 31;
+		if (start === PAGINATION_FIRST_START) {
+			start = PAGINATION_SECOND_START;
 		} else {
-			start += 100;
+			start += PAGINATION_INCREMENT;
 		}
 	}
 
@@ -62,7 +71,7 @@ export async function generateUrls(
 }
 
 export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
-	const res = await fetch(url);
+	const res = await fetchWithRetry(url);
 	const html = await res.text();
 	const document = new JSDOM(html).window.document;
 
@@ -71,14 +80,14 @@ export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
 		.querySelector("td > table");
 
 	if (!mainTable) {
-		console.error("Main table not found");
+		logger.error("Main table not found");
 		process.exit(1);
 	}
 
 	const rows = mainTable.querySelectorAll("tr");
 
 	if (rows.length === 0) {
-		console.error("No rows found in the main table");
+		logger.error("No rows found in the main table");
 		process.exit(1);
 	}
 
@@ -137,14 +146,14 @@ export const extractArticlesFromRow = (row: HTMLTableRowElement): Article | null
  */
 export async function loadPapers(papersFilePath = PAPERS_FILE_PATH): Promise<Paper[]> {
 	try {
-		if (!fs.existsSync(PAPERS_FILE_PATH)) {
-			console.log("Creating papers.json");
-			await Bun.write(PAPERS_FILE_PATH, JSON.stringify([]));
+		if (!fs.existsSync(papersFilePath)) {
+			logger.info(`Creating ${papersFilePath}`);
+			await Bun.write(papersFilePath, JSON.stringify([]));
 		}
-		const papersFile = Bun.file(PAPERS_FILE_PATH);
+		const papersFile = Bun.file(papersFilePath);
 		return JSON.parse(await papersFile.text());
 	} catch (error) {
-		console.error("Failed to load papers:", error);
+		logger.error("Failed to load papers:", error);
 		throw new Error("Error loading papers data");
 	}
 }
@@ -171,16 +180,17 @@ export async function updatePapers(
 
 /**
  * Splits an array into chunks of a specified size.
+ * Does not mutate the original array.
  *
- * @template T - The type of elements in the array...
+ * @template T - The type of elements in the array.
  * @param {T[]} array - The array to be chunked.
  * @param {number} chunkSize - The size of each chunk.
  * @returns {T[][]} - An array of chunks, where each chunk is an array of elements.
  */
 export function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-	const results = [];
-	while (array.length) {
-		results.push(array.splice(0, chunkSize));
+	const results: T[][] = [];
+	for (let i = 0; i < array.length; i += chunkSize) {
+		results.push(array.slice(i, i + chunkSize));
 	}
 	return results;
 }
