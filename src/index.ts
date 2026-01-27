@@ -5,7 +5,7 @@ import { parseAbstract, parseCenterElement, parseTable } from "./parsingHelpers"
 import { splitKeywords } from "./splitKeywords";
 import type { Paper } from "./types";
 import { logger } from "./utils/logger";
-import { chunkArray, getPaperHtml, loadPapers, updatePapers } from "./utils/utils";
+import { getPaperHtml, loadPapers, mapWithConcurrency, updatePapers } from "./utils/utils";
 
 // Scraping statistics
 interface ScrapeStats {
@@ -39,79 +39,73 @@ const newIdsList = await newIds();
  * await scrapePapers([1, 2, 3]);
  */
 async function scrapePapers(ids: number[] = []) {
-	const chunkedIds = chunkArray(ids, CHUNK_SIZE);
+	await mapWithConcurrency(ids, CHUNK_SIZE, async (id) => {
+		stats.papersAttempted++;
+		try {
+			const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
+			const html = await getPaperHtml(paperId);
+			const document = new JSDOM(html).window.document;
 
-	for (const chunk of chunkedIds) {
-		await Promise.all(
-			chunk.map(async (id) => {
-				stats.papersAttempted++;
-				try {
-					const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
-					const html = await getPaperHtml(paperId);
-					const document = new JSDOM(html).window.document;
+			const pageTitle = document.querySelector("title")?.textContent;
 
-					const pageTitle = document.querySelector("title")?.textContent;
+			if (pageTitle === "lingbuzz - archive of linguistics articles") {
+				logger.info(`No paper found for ${paperId}`);
+				stats.papersSkipped++;
+				return;
+			}
 
-					if (pageTitle === "lingbuzz - archive of linguistics articles") {
-						logger.info(`No paper found for ${paperId}`);
-						stats.papersSkipped++;
-						return;
-					}
+			const header = parseCenterElement(document);
+			const rowTexts = parseTable(document);
 
-					const header = parseCenterElement(document);
-					const rowTexts = parseTable(document);
+			// Safely access header elements with validation
+			const titleRaw = header[0];
+			const authorsRaw = header[1];
+			const dateRaw = header[2];
 
-					// Safely access header elements with validation
-					const titleRaw = header[0];
-					const authorsRaw = header[1];
-					const dateRaw = header[2];
+			if (!titleRaw || !authorsRaw) {
+				logger.warn(`Missing header data for paper ${paperId}`);
+				stats.papersSkipped++;
+				return;
+			}
 
-					if (!titleRaw || !authorsRaw) {
-						logger.warn(`Missing header data for paper ${paperId}`);
-						stats.papersSkipped++;
-						return;
-					}
+			const title = titleRaw.replace(/"/g, "'").trim();
+			const authors = authorsRaw.split(",").map((author) => author.trim());
+			const date = dateRaw ? dateRaw.trim() : "";
+			const published_in = rowTexts.get("Published in") || "";
+			const keywords_raw = rowTexts.get("keywords") || "";
+			const keywords = splitKeywords(keywords_raw);
+			const downloadStr = rowTexts.get("Downloaded");
+			const downloads = (() => {
+				if (!downloadStr) return 0;
+				const match = downloadStr.match(/\d+/);
+				return match ? Number.parseInt(match[0], 10) || 0 : 0;
+			})();
 
-					const title = titleRaw.replace(/"/g, "'").trim();
-					const authors = authorsRaw.split(",").map((author) => author.trim());
-					const date = dateRaw ? dateRaw.trim() : "";
-					const published_in = rowTexts.get("Published in") || "";
-					const keywords_raw = rowTexts.get("keywords") || "";
-					const keywords = splitKeywords(keywords_raw);
-					const downloadStr = rowTexts.get("Downloaded");
-					const downloads = (() => {
-						if (!downloadStr) return 0;
-						const match = downloadStr.match(/\d+/);
-						return match ? Number.parseInt(match[0], 10) || 0 : 0;
-					})();
+			const rawAbstract =
+				document.querySelector("body")?.childNodes[5]?.textContent ?? "";
 
-					const rawAbstract =
-						document.querySelector("body")?.childNodes[5]?.textContent ?? "";
+			const abstract = !/^Format:/.test(rawAbstract)
+				? parseAbstract(rawAbstract)
+				: "";
 
-					const abstract = !/^Format:/.test(rawAbstract)
-						? parseAbstract(rawAbstract)
-						: "";
-
-					papers.push({
-						id: paperId,
-						title,
-						authors,
-						date,
-						published_in,
-						keywords_raw,
-						keywords,
-						abstract,
-						downloads,
-						link: `https://ling.auf.net/lingbuzz/${paperId}`,
-					});
-					stats.papersSucceeded++;
-				} catch (e) {
-					stats.papersFailed++;
-					logger.error(`Failed to scrape paper with id ${id}`, e);
-				}
-			}),
-		);
-	}
+			papers.push({
+				id: paperId,
+				title,
+				authors,
+				date,
+				published_in,
+				keywords_raw,
+				keywords,
+				abstract,
+				downloads,
+				link: `https://ling.auf.net/lingbuzz/${paperId}`,
+			});
+			stats.papersSucceeded++;
+		} catch (e) {
+			stats.papersFailed++;
+			logger.error(`Failed to scrape paper with id ${id}`, e);
+		}
+	});
 
 	const currentPapers = await loadPapers();
 	const updatedPapersData = await updatePapers(papers, currentPapers);
