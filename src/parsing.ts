@@ -64,9 +64,9 @@ export function parsePaper(html: string, paperId: string): Paper | null {
 		}
 	}
 
-	// Fallback to original behavior if smart search failed (e.g. maybe it WAS childNodes[5] but I missed it)
-	if (!rawAbstract) {
-		rawAbstract = body?.childNodes[5]?.textContent ?? "";
+	// Fallback to original behavior if smart search failed
+	if (!rawAbstract && body?.childNodes[5]?.textContent) {
+		rawAbstract = body.childNodes[5].textContent;
 	}
 
 	const abstract = !/^Format:/.test(rawAbstract)
