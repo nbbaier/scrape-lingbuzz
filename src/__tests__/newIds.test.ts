@@ -33,7 +33,7 @@ describe("newIds", () => {
 
 		// Mock loadPapers to return a dummy paper so newIds logic proceeds
 		const loadPapersSpy = spyOn(utilsModule, "loadPapers").mockResolvedValue([
-			{ id: "000000", title: "Dummy", authors: {}, pdfLink: "", paperURL: "" },
+		{ id: "000000", title: "Dummy", authors: [], date: "", published_in: "", keywords: [], keywords_raw: "", abstract: "", link: "", downloads: 0 },
 		]);
 
 		const ids = await newIds();
