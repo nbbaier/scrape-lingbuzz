@@ -223,7 +223,7 @@ export async function mapWithConcurrency<T, R>(
 			results[index] = result;
 		});
 
-		const wrapper = p.then(() => {
+		const wrapper = p.finally(() => {
 			executing.delete(wrapper);
 		});
 
