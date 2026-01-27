@@ -169,10 +169,11 @@ export async function updatePapers(
 	papers: Paper[],
 	newPapers: Paper[],
 ): Promise<Paper[]> {
+	const newPaperIds = new Set(newPapers.map((p) => p.id));
 	for (const item of papers) {
-		const exists = newPapers.some((obj) => obj.id === item.id);
-		if (!exists) {
+		if (!newPaperIds.has(item.id)) {
 			newPapers.push(item);
+			newPaperIds.add(item.id);
 		}
 	}
 	return newPapers;
