@@ -202,6 +202,6 @@ describe("parseAbstract", () => {
 	test("handles string with only whitespace", () => {
 		const input = "   \n\n   ";
 		const result = parseAbstract(input);
-		expect(result).toBe(" ");
+		expect(result).toBe("");
 	});
 });
