@@ -194,3 +194,43 @@ export function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 	}
 	return results;
 }
+
+/**
+ * Maps over an array with a specified concurrency limit.
+ *
+ * @template T - The type of elements in the input array.
+ * @template R - The type of the result of the mapping function.
+ * @param {T[]} items - The array to map over.
+ * @param {number} concurrency - The maximum number of concurrent promises.
+ * @param {(item: T) => Promise<R>} fn - The mapping function.
+ * @returns {Promise<R[]>} - A promise that resolves to an array of results.
+ */
+export async function mapWithConcurrency<T, R>(
+	items: T[],
+	concurrency: number,
+	fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+	const results: R[] = new Array(items.length);
+	const executing = new Set<Promise<void>>();
+	const promises: Promise<void>[] = [];
+
+	for (const [index, item] of items.entries()) {
+		if (executing.size >= concurrency) {
+			await Promise.race(executing);
+		}
+
+		const p = fn(item).then((result) => {
+			results[index] = result;
+		});
+
+		const wrapper = p.then(() => {
+			executing.delete(wrapper);
+		});
+
+		executing.add(wrapper);
+		promises.push(wrapper);
+	}
+
+	await Promise.all(promises);
+	return results;
+}
