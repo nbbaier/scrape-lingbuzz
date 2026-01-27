@@ -31,10 +31,9 @@ async function getFrontPageIds(): Promise<number[]> {
 			const match = regex.exec(href);
 			return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
 		})
-		.map((id) => Number.parseInt(id, 10))
-		.filter((v, i, a) => a.indexOf(v) === i); // remove duplicates
+		.map((id) => Number.parseInt(id, 10));
 
-	return hrefs;
+	return [...new Set(hrefs)];
 }
 
 /**
