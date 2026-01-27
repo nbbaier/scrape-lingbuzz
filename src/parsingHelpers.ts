@@ -57,5 +57,9 @@ export function parseTable(document: Document): Map<string, string> {
  * @returns The parsed abstract string.
  */
 export function parseAbstract(rawAbstract: string): string {
-	return rawAbstract.replace(/"/g, "'").replace(/\n/g, " ").replace(/\s+/g, " ");
+	return rawAbstract
+		.replace(/"/g, "'")
+		.replace(/\n/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
 }
