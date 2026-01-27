@@ -3,7 +3,12 @@ import { newestId, newIds } from "./newIds";
 import { parsePaper } from "./parsing";
 import type { Paper } from "./schemas";
 import { logger } from "./utils/logger";
-import { chunkArray, getPaperHtml, loadPapers, updatePapers } from "./utils/utils";
+import {
+	getPaperHtml,
+	loadPapers,
+	mapWithConcurrency,
+	updatePapers,
+} from "./utils/utils";
 
 // Scraping statistics
 interface ScrapeStats {
@@ -37,31 +42,25 @@ const newIdsList = await newIds();
  * await scrapePapers([1, 2, 3]);
  */
 async function scrapePapers(ids: number[] = []) {
-	const chunkedIds = chunkArray(ids, CHUNK_SIZE);
+	await mapWithConcurrency(ids, CHUNK_SIZE, async (id) => {
+		stats.papersAttempted++;
+		try {
+			const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
+			const html = await getPaperHtml(paperId);
 
-	for (const chunk of chunkedIds) {
-		await Promise.all(
-			chunk.map(async (id) => {
-				stats.papersAttempted++;
-				try {
-					const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
-					const html = await getPaperHtml(paperId);
+			const paper = parsePaper(html, paperId);
 
-					const paper = parsePaper(html, paperId);
-
-					if (paper) {
-						papers.push(paper);
-						stats.papersSucceeded++;
-					} else {
-						stats.papersSkipped++;
-					}
-				} catch (e) {
-					stats.papersFailed++;
-					logger.error(`Failed to scrape paper with id ${id}`, e);
-				}
-			}),
-		);
-	}
+			if (paper) {
+				papers.push(paper);
+				stats.papersSucceeded++;
+			} else {
+				stats.papersSkipped++;
+			}
+		} catch (e) {
+			stats.papersFailed++;
+			logger.error(`Failed to scrape paper with id ${id}`, e);
+		}
+	});
 
 	const currentPapers = await loadPapers();
 	const updatedPapersData = await updatePapers(papers, currentPapers);

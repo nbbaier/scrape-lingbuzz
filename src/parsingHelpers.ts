@@ -1,5 +1,3 @@
-import { JSDOM } from "jsdom";
-
 /**
  * Parses the center element in a document and returns an array of strings.
  *
@@ -12,10 +10,11 @@ export function parseCenterElement(document: Document): string[] {
 
 	const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
 
+	const tempDiv = document.createElement("div");
 	const lines = linesWithHtml
 		.map((line) => {
-			const tempDom = new JSDOM(`<div>${line}</div>`);
-			return tempDom.window.document.querySelector("div")?.textContent?.trim() || "";
+			tempDiv.innerHTML = line;
+			return tempDiv.textContent?.trim() || "";
 		})
 		.filter(Boolean); // Filter out any empty strings
 
