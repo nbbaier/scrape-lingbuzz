@@ -1,8 +1,29 @@
 import { JSDOM } from "jsdom";
 import { parseAbstract, parseCenterElement, parseTable } from "./parsingHelpers";
+import { type Paper, PaperSchema } from "./schemas";
 import { splitKeywords } from "./splitKeywords";
-import { PaperSchema, type Paper } from "./schemas";
 import { logger } from "./utils/logger";
+
+const stripControlChars = (value: string): string =>
+	Array.from(value)
+		.filter((char) => {
+			const code = char.charCodeAt(0);
+			return !(code <= 31 || (code >= 127 && code <= 159));
+		})
+		.join("");
+
+const normalizeText = (value: string): string =>
+	stripControlChars(value).replace(/"/g, "'").replace(/\s+/g, " ").trim();
+
+const getTableValue = (table: Map<string, string>, keys: string[]): string => {
+	for (const key of keys) {
+		const value = table.get(key);
+		if (value) {
+			return value;
+		}
+	}
+	return "";
+};
 
 export function parsePaper(html: string, paperId: string): Paper | null {
 	const document = new JSDOM(html).window.document;
@@ -26,13 +47,24 @@ export function parsePaper(html: string, paperId: string): Paper | null {
 		return null;
 	}
 
-	const title = titleRaw.replace(/"/g, "'").trim();
-	const authors = authorsRaw.split(",").map((author) => author.trim());
-	const date = dateRaw ? dateRaw.trim() : "";
-	const published_in = rowTexts.get("Published in") || "";
-	const keywords_raw = rowTexts.get("keywords") || "";
+	const title = normalizeText(titleRaw);
+	const authors = normalizeText(authorsRaw)
+		.split(",")
+		.map((author) => author.trim())
+		.filter(Boolean);
+	const date = dateRaw ? normalizeText(dateRaw) : "";
+	const published_in = normalizeText(
+		getTableValue(rowTexts, ["published in", "publication", "published"]),
+	);
+	const keywords_raw = normalizeText(
+		getTableValue(rowTexts, ["keywords", "key words", "key-words"]),
+	);
 	const keywords = splitKeywords(keywords_raw);
-	const downloadStr = rowTexts.get("Downloaded");
+	const downloadStr = getTableValue(rowTexts, [
+		"downloaded",
+		"downloads",
+		"downloaded times",
+	]);
 	const downloads = (() => {
 		if (!downloadStr) return 0;
 		const match = downloadStr.match(/\d+/);
@@ -69,9 +101,7 @@ export function parsePaper(html: string, paperId: string): Paper | null {
 		rawAbstract = body.childNodes[5].textContent;
 	}
 
-	const abstract = !/^Format:/.test(rawAbstract)
-		? parseAbstract(rawAbstract)
-		: "";
+	const abstract = !/^Format:/.test(rawAbstract) ? parseAbstract(rawAbstract) : "";
 
 	const paperData = {
 		id: paperId,

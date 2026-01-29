@@ -40,9 +40,10 @@ export function parseTable(document: Document): Map<string, string> {
 			.filter(Boolean); // This removes any falsy values, including empty strings
 
 		if (cells.length >= 2) {
-			const key = (cells[0] ?? "").replace(":", "");
+			const key = (cells[0] ?? "").replace(":", "").trim();
 			const value = cells[1] || "";
-			tableDataMap.set(key, value);
+			const normalizedKey = key.toLowerCase().replace(/\s+/g, " ").trim();
+			tableDataMap.set(normalizedKey, value);
 		}
 	}
 
@@ -57,9 +58,5 @@ export function parseTable(document: Document): Map<string, string> {
  * @returns The parsed abstract string.
  */
 export function parseAbstract(rawAbstract: string): string {
-	return rawAbstract
-		.replace(/"/g, "'")
-		.replace(/\n/g, " ")
-		.replace(/\s+/g, " ")
-		.trim();
+	return rawAbstract.replace(/"/g, "'").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 }

@@ -169,14 +169,18 @@ export async function updatePapers(
 	papers: Paper[],
 	newPapers: Paper[],
 ): Promise<Paper[]> {
-	const newPaperIds = new Set(newPapers.map((p) => p.id));
-	for (const item of papers) {
-		if (!newPaperIds.has(item.id)) {
-			newPapers.push(item);
-			newPaperIds.add(item.id);
+	const merged = new Map<string, Paper>();
+	for (const paper of newPapers) {
+		merged.set(paper.id, paper);
+	}
+	for (const paper of papers) {
+		if (!merged.has(paper.id)) {
+			merged.set(paper.id, paper);
 		}
 	}
-	return newPapers;
+	return Array.from(merged.values()).sort(
+		(a, b) => Number.parseInt(a.id, 10) - Number.parseInt(b.id, 10),
+	);
 }
 
 /**
