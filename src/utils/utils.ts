@@ -146,7 +146,7 @@ export const extractArticlesFromRow = (
 /**
  * Loads previously scraped papers data from a JSON file.
  *
- * @param papersFilePath - The path to the papers JSON file. Defaults to "./papers.json".
+ * @param papersFilePath - The path to the papers JSON file. Defaults to PAPERS_FILE_PATH.
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
@@ -167,18 +167,22 @@ export async function loadPapers(
 }
 
 /**
- * Updates the list of papers with new papers.
+ * Merges newly scraped papers with the existing list of papers.
+ * Existing papers with the same ID are preserved.
  *
- * @param {Paper[]} papers - The new papers to be added.
- * @param {Paper[]} newPapers - The current list of papers.
- * @returns {Paper[]} The updated list of papers.
+ * @param newPapers - The new papers to be added.
+ * @param existingPapers - The current list of existing papers.
+ * @returns The updated list of papers, sorted by ID.
  */
-export function updatePapers(papers: Paper[], newPapers: Paper[]): Paper[] {
+export function updatePapers(
+  newPapers: Paper[],
+  existingPapers: Paper[]
+): Paper[] {
   const merged = new Map<string, Paper>();
-  for (const paper of newPapers) {
+  for (const paper of existingPapers) {
     merged.set(paper.id, paper);
   }
-  for (const paper of papers) {
+  for (const paper of newPapers) {
     if (!merged.has(paper.id)) {
       merged.set(paper.id, paper);
     }
