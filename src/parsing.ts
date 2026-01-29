@@ -1,125 +1,133 @@
 import { JSDOM } from "jsdom";
-import { parseAbstract, parseCenterElement, parseTable } from "./parsingHelpers";
+import {
+  parseAbstract,
+  parseCenterElement,
+  parseTable,
+} from "./parsingHelpers";
 import { type Paper, PaperSchema } from "./schemas";
 import { splitKeywords } from "./splitKeywords";
 import { logger } from "./utils/logger";
 
 const stripControlChars = (value: string): string =>
-	Array.from(value)
-		.filter((char) => {
-			const code = char.charCodeAt(0);
-			return !(code <= 31 || (code >= 127 && code <= 159));
-		})
-		.join("");
+  Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return !(code <= 31 || (code >= 127 && code <= 159));
+    })
+    .join("");
 
 const normalizeText = (value: string): string =>
-	stripControlChars(value).replace(/"/g, "'").replace(/\s+/g, " ").trim();
+  stripControlChars(value).replace(/"/g, "'").replace(/\s+/g, " ").trim();
 
 const getTableValue = (table: Map<string, string>, keys: string[]): string => {
-	for (const key of keys) {
-		const value = table.get(key);
-		if (value) {
-			return value;
-		}
-	}
-	return "";
+  for (const key of keys) {
+    const value = table.get(key);
+    if (value) {
+      return value;
+    }
+  }
+  return "";
 };
 
 export function parsePaper(html: string, paperId: string): Paper | null {
-	const document = new JSDOM(html).window.document;
-	const pageTitle = document.querySelector("title")?.textContent;
+  const document = new JSDOM(html).window.document;
+  const pageTitle = document.querySelector("title")?.textContent;
 
-	if (pageTitle === "lingbuzz - archive of linguistics articles") {
-		logger.info(`No paper found for ${paperId}`);
-		return null;
-	}
+  if (pageTitle === "lingbuzz - archive of linguistics articles") {
+    logger.info(`No paper found for ${paperId}`);
+    return null;
+  }
 
-	const header = parseCenterElement(document);
-	const rowTexts = parseTable(document);
+  const header = parseCenterElement(document);
+  const rowTexts = parseTable(document);
 
-	// Safely access header elements with validation
-	const titleRaw = header[0];
-	const authorsRaw = header[1];
-	const dateRaw = header[2];
+  // Safely access header elements with validation
+  const titleRaw = header[0];
+  const authorsRaw = header[1];
+  const dateRaw = header[2];
 
-	if (!titleRaw || !authorsRaw) {
-		logger.warn(`Missing header data for paper ${paperId}`);
-		return null;
-	}
+  if (!(titleRaw && authorsRaw)) {
+    logger.warn(`Missing header data for paper ${paperId}`);
+    return null;
+  }
 
-	const title = normalizeText(titleRaw);
-	const authors = normalizeText(authorsRaw)
-		.split(",")
-		.map((author) => author.trim())
-		.filter(Boolean);
-	const date = dateRaw ? normalizeText(dateRaw) : "";
-	const published_in = normalizeText(
-		getTableValue(rowTexts, ["published in", "publication", "published"]),
-	);
-	const keywords_raw = normalizeText(
-		getTableValue(rowTexts, ["keywords", "key words", "key-words"]),
-	);
-	const keywords = splitKeywords(keywords_raw);
-	const downloadStr = getTableValue(rowTexts, [
-		"downloaded",
-		"downloads",
-		"downloaded times",
-	]);
-	const downloads = (() => {
-		if (!downloadStr) return 0;
-		const match = downloadStr.match(/\d+/);
-		return match ? Number.parseInt(match[0], 10) || 0 : 0;
-	})();
+  const title = normalizeText(titleRaw);
+  const authors = normalizeText(authorsRaw)
+    .split(",")
+    .map((author) => author.trim())
+    .filter(Boolean);
+  const date = dateRaw ? normalizeText(dateRaw) : "";
+  const published_in = normalizeText(
+    getTableValue(rowTexts, ["published in", "publication", "published"])
+  );
+  const keywords_raw = normalizeText(
+    getTableValue(rowTexts, ["keywords", "key words", "key-words"])
+  );
+  const keywords = splitKeywords(keywords_raw);
+  const downloadStr = getTableValue(rowTexts, [
+    "downloaded",
+    "downloads",
+    "downloaded times",
+  ]);
+  const downloads = (() => {
+    if (!downloadStr) {
+      return 0;
+    }
+    const match = downloadStr.match(/\d+/);
+    return match ? Number.parseInt(match[0], 10) || 0 : 0;
+  })();
 
-	let rawAbstract = "";
-	const body = document.querySelector("body");
+  let rawAbstract = "";
+  const body = document.querySelector("body");
 
-	if (body) {
-		// Legacy: Try exact index first, but only if it looks like the abstract (text node)
-		// The original scraper strictly used childNodes[5].
-		const legacyNode = body.childNodes[5];
-		if (legacyNode?.nodeType === 3 && legacyNode.textContent?.trim()) {
-			rawAbstract = legacyNode.textContent;
-		} else {
-			// Robust fallback: Look for the first substantial text node after the table
-			const table = body.querySelector("table");
-			if (table) {
-				let curr: ChildNode | null = table.nextSibling;
-				while (curr) {
-					if (curr.nodeType === 3 && curr.textContent?.trim()) {
-						rawAbstract = curr.textContent;
-						break;
-					}
-					curr = curr.nextSibling;
-				}
-			}
-		}
-	}
+  if (body) {
+    // Legacy: Try exact index first, but only if it looks like the abstract (text node)
+    // The original scraper strictly used childNodes[5].
+    const legacyNode = body.childNodes[5];
+    if (legacyNode?.nodeType === 3 && legacyNode.textContent?.trim()) {
+      rawAbstract = legacyNode.textContent;
+    } else {
+      // Robust fallback: Look for the first substantial text node after the table
+      const table = body.querySelector("table");
+      if (table) {
+        let curr: ChildNode | null = table.nextSibling;
+        while (curr) {
+          if (curr.nodeType === 3 && curr.textContent?.trim()) {
+            rawAbstract = curr.textContent;
+            break;
+          }
+          curr = curr.nextSibling;
+        }
+      }
+    }
+  }
 
-	// Fallback to original behavior if smart search failed
-	if (!rawAbstract && body?.childNodes[5]?.textContent) {
-		rawAbstract = body.childNodes[5].textContent;
-	}
+  // Fallback to original behavior if smart search failed
+  if (!rawAbstract && body?.childNodes[5]?.textContent) {
+    rawAbstract = body.childNodes[5].textContent;
+  }
 
-	const abstract = !/^Format:/.test(rawAbstract) ? parseAbstract(rawAbstract) : "";
+  const abstract = /^Format:/.test(rawAbstract)
+    ? ""
+    : parseAbstract(rawAbstract);
 
-	const paperData = {
-		id: paperId,
-		title,
-		authors,
-		date,
-		published_in,
-		keywords_raw,
-		keywords,
-		abstract,
-		downloads,
-		link: `https://ling.auf.net/lingbuzz/${paperId}`,
-	};
+  const paperData = {
+    id: paperId,
+    title,
+    authors,
+    date,
+    published_in,
+    keywords_raw,
+    keywords,
+    abstract,
+    downloads,
+    link: `https://ling.auf.net/lingbuzz/${paperId}`,
+  };
 
-	try {
-		return PaperSchema.parse(paperData);
-	} catch (error) {
-		logger.error(`Validation failed for paper ${paperId}`, error);
-		return null;
-	}
+  try {
+    return PaperSchema.parse(paperData);
+  } catch (error) {
+    logger.error(`Validation failed for paper ${paperId}`, error);
+    return null;
+  }
 }

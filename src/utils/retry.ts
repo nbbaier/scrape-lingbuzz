@@ -10,29 +10,29 @@ import { logger } from "./logger";
  * @returns A promise that resolves with the function result or rejects after all retries.
  */
 export async function withRetry<T>(
-	fn: () => Promise<T>,
-	maxRetries = MAX_RETRIES,
-	baseDelayMs = RETRY_BASE_DELAY_MS,
+  fn: () => Promise<T>,
+  maxRetries = MAX_RETRIES,
+  baseDelayMs = RETRY_BASE_DELAY_MS
 ): Promise<T> {
-	let lastError: Error | undefined;
+  let lastError: Error | undefined;
 
-	for (let attempt = 0; attempt <= maxRetries; attempt++) {
-		try {
-			return await fn();
-		} catch (error) {
-			lastError = error as Error;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
 
-			if (attempt < maxRetries) {
-				const delay = baseDelayMs * 2 ** attempt;
-				logger.info(
-					`Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`,
-				);
-				await new Promise((resolve) => setTimeout(resolve, delay));
-			}
-		}
-	}
+      if (attempt < maxRetries) {
+        const delay = baseDelayMs * 2 ** attempt;
+        logger.info(
+          `Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
 
-	throw lastError;
+  throw lastError;
 }
 
 /**
@@ -44,15 +44,15 @@ export async function withRetry<T>(
  * @returns A promise that resolves to the Response.
  */
 export async function fetchWithRetry(
-	url: string,
-	options?: RequestInit,
-	maxRetries = MAX_RETRIES,
+  url: string,
+  options?: RequestInit,
+  maxRetries = MAX_RETRIES
 ): Promise<Response> {
-	return withRetry(async () => {
-		const response = await fetch(url, options);
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-		}
-		return response;
-	}, maxRetries);
+  return withRetry(async () => {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return response;
+  }, maxRetries);
 }

@@ -25,39 +25,39 @@ const mockHtml = `
 `;
 
 describe("newIds", () => {
-	test("should return deduplicated IDs", async () => {
-		// Mock fetchWithRetry to return our HTML
-		const fetchSpy = vi
-			.spyOn(retryModule, "fetchWithRetry")
-			.mockResolvedValue(new Response(mockHtml));
+  test("should return deduplicated IDs", async () => {
+    // Mock fetchWithRetry to return our HTML
+    const fetchSpy = vi
+      .spyOn(retryModule, "fetchWithRetry")
+      .mockResolvedValue(new Response(mockHtml));
 
-		// Mock loadPapers to return a dummy paper so newIds logic proceeds
-		const loadPapersSpy = vi
-			.spyOn(utilsModule, "loadPapers")
-			.mockResolvedValue([
-				{
-					id: "000000",
-					title: "Dummy",
-					authors: [],
-					date: "",
-					published_in: "",
-					keywords: [],
-					keywords_raw: "",
-					abstract: "",
-					link: "",
-					downloads: 0,
-				},
-			]);
+    // Mock loadPapers to return a dummy paper so newIds logic proceeds
+    const loadPapersSpy = vi
+      .spyOn(utilsModule, "loadPapers")
+      .mockResolvedValue([
+        {
+          id: "000000",
+          title: "Dummy",
+          authors: [],
+          date: "",
+          published_in: "",
+          keywords: [],
+          keywords_raw: "",
+          abstract: "",
+          link: "",
+          downloads: 0,
+        },
+      ]);
 
-		const ids = await newIds();
+    const ids = await newIds();
 
-		// The order depends on the implementation, but we expect 123456 and 654321
-		// Since Set preserves insertion order, and filter does too:
-		// 123456 appears first, then 654321.
-		expect(ids).toEqual([123456, 654321]);
-		expect(ids.length).toBe(2);
+    // The order depends on the implementation, but we expect 123456 and 654321
+    // Since Set preserves insertion order, and filter does too:
+    // 123456 appears first, then 654321.
+    expect(ids).toEqual([123_456, 654_321]);
+    expect(ids.length).toBe(2);
 
-		fetchSpy.mockRestore();
-		loadPapersSpy.mockRestore();
-	});
+    fetchSpy.mockRestore();
+    loadPapersSpy.mockRestore();
+  });
 });
