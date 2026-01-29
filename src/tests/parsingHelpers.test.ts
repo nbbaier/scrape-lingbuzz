@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
 import { JSDOM } from "jsdom";
+import { describe, expect, test } from "vitest";
 import { parseAbstract, parseCenterElement, parseTable } from "../parsingHelpers";
 
 describe("parseCenterElement", () => {

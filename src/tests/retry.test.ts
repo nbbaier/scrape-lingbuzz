@@ -1,9 +1,15 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { fetchWithRetry, withRetry } from "../utils/retry";
+
+const setFetchMock = (
+	impl: (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>,
+) => {
+	globalThis.fetch = vi.fn(impl) as unknown as typeof fetch;
+};
 
 describe("withRetry", () => {
 	test("returns result on first successful attempt", async () => {
-		const fn = mock(() => Promise.resolve("success"));
+		const fn = vi.fn(() => Promise.resolve("success"));
 		const result = await withRetry(fn, 3, 10);
 		expect(result).toBe("success");
 		expect(fn).toHaveBeenCalledTimes(1);
@@ -11,7 +17,7 @@ describe("withRetry", () => {
 
 	test("retries on failure and eventually succeeds", async () => {
 		let attempts = 0;
-		const fn = mock(() => {
+		const fn = vi.fn(() => {
 			attempts++;
 			if (attempts < 3) {
 				return Promise.reject(new Error("fail"));
@@ -25,14 +31,14 @@ describe("withRetry", () => {
 	});
 
 	test("throws after max retries exceeded", async () => {
-		const fn = mock(() => Promise.reject(new Error("persistent failure")));
+		const fn = vi.fn(() => Promise.reject(new Error("persistent failure")));
 
 		await expect(withRetry(fn, 2, 10)).rejects.toThrow("persistent failure");
 		expect(fn).toHaveBeenCalledTimes(3); // initial + 2 retries
 	});
 
 	test("respects maxRetries parameter", async () => {
-		const fn = mock(() => Promise.reject(new Error("fail")));
+		const fn = vi.fn(() => Promise.reject(new Error("fail")));
 
 		await expect(withRetry(fn, 0, 10)).rejects.toThrow("fail");
 		expect(fn).toHaveBeenCalledTimes(1); // no retries when maxRetries is 0
@@ -47,7 +53,7 @@ describe("withRetry", () => {
 			}
 		}
 
-		const fn = mock(() => Promise.reject(new CustomError("custom", "ERR_001")));
+		const fn = vi.fn(() => Promise.reject(new CustomError("custom", "ERR_001")));
 
 		try {
 			await withRetry(fn, 1, 10);
@@ -58,9 +64,9 @@ describe("withRetry", () => {
 	});
 
 	test("works with async functions returning different types", async () => {
-		const numberFn = mock(() => Promise.resolve(42));
-		const arrayFn = mock(() => Promise.resolve([1, 2, 3]));
-		const objectFn = mock(() => Promise.resolve({ key: "value" }));
+		const numberFn = vi.fn(() => Promise.resolve(42));
+		const arrayFn = vi.fn(() => Promise.resolve([1, 2, 3]));
+		const objectFn = vi.fn(() => Promise.resolve({ key: "value" }));
 
 		expect(await withRetry(numberFn, 1, 10)).toBe(42);
 		expect(await withRetry(arrayFn, 1, 10)).toEqual([1, 2, 3]);
@@ -81,7 +87,7 @@ describe("fetchWithRetry", () => {
 
 	test("returns response on successful fetch", async () => {
 		const mockResponse = new Response("success", { status: 200 });
-		globalThis.fetch = mock(() => Promise.resolve(mockResponse));
+		setFetchMock(() => Promise.resolve(mockResponse));
 
 		const result = await fetchWithRetry("https://example.com", undefined, 3);
 		expect(result).toBe(mockResponse);
@@ -92,7 +98,7 @@ describe("fetchWithRetry", () => {
 		let attempts = 0;
 		const mockResponse = new Response("success", { status: 200 });
 
-		globalThis.fetch = mock(() => {
+		setFetchMock(() => {
 			attempts++;
 			if (attempts < 3) {
 				return Promise.reject(new Error("Network error"));
@@ -113,7 +119,7 @@ describe("fetchWithRetry", () => {
 		});
 		const successResponse = new Response("success", { status: 200 });
 
-		globalThis.fetch = mock(() => {
+		setFetchMock(() => {
 			attempts++;
 			if (attempts < 2) {
 				return Promise.resolve(errorResponse);
@@ -131,7 +137,7 @@ describe("fetchWithRetry", () => {
 			status: 500,
 			statusText: "Internal Server Error",
 		});
-		globalThis.fetch = mock(() => Promise.resolve(errorResponse));
+		setFetchMock(() => Promise.resolve(errorResponse));
 
 		await expect(fetchWithRetry("https://example.com", undefined, 2)).rejects.toThrow(
 			"HTTP 500: Internal Server Error",
@@ -140,7 +146,7 @@ describe("fetchWithRetry", () => {
 	});
 
 	test("throws after max retries on network errors", async () => {
-		globalThis.fetch = mock(() => Promise.reject(new Error("Network error")));
+		setFetchMock(() => Promise.reject(new Error("Network error")));
 
 		await expect(fetchWithRetry("https://example.com", undefined, 2)).rejects.toThrow(
 			"Network error",
@@ -150,7 +156,7 @@ describe("fetchWithRetry", () => {
 
 	test("passes fetch options correctly", async () => {
 		const mockResponse = new Response("success", { status: 200 });
-		globalThis.fetch = mock(() => Promise.resolve(mockResponse));
+		setFetchMock(() => Promise.resolve(mockResponse));
 
 		const options: RequestInit = {
 			method: "POST",

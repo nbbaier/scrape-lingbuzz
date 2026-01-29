@@ -1,17 +1,17 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../utils/logger";
 
 describe("logger", () => {
 	let originalLog: typeof console.log;
 	let originalError: typeof console.error;
-	let mockLog: ReturnType<typeof mock>;
-	let mockError: ReturnType<typeof mock>;
+	let mockLog: ReturnType<typeof vi.fn>;
+	let mockError: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
 		originalLog = console.log;
 		originalError = console.error;
-		mockLog = mock(() => {});
-		mockError = mock(() => {});
+		mockLog = vi.fn(() => {});
+		mockError = vi.fn(() => {});
 		console.log = mockLog;
 		console.error = mockError;
 	});

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { chunkArray, mapWithConcurrency } from "../utils/utils";
 
 describe("chunkArray", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, spyOn, test } from "bun:test";
+import { describe, expect, test, vi } from "vitest";
 import { newIds } from "../newIds";
 import * as retryModule from "../utils/retry";
 import * as utilsModule from "../utils/utils";
@@ -27,14 +27,27 @@ const mockHtml = `
 describe("newIds", () => {
 	test("should return deduplicated IDs", async () => {
 		// Mock fetchWithRetry to return our HTML
-		const fetchSpy = spyOn(retryModule, "fetchWithRetry").mockResolvedValue(
-			new Response(mockHtml),
-		);
+		const fetchSpy = vi
+			.spyOn(retryModule, "fetchWithRetry")
+			.mockResolvedValue(new Response(mockHtml));
 
 		// Mock loadPapers to return a dummy paper so newIds logic proceeds
-		const loadPapersSpy = spyOn(utilsModule, "loadPapers").mockResolvedValue([
-		{ id: "000000", title: "Dummy", authors: [], date: "", published_in: "", keywords: [], keywords_raw: "", abstract: "", link: "", downloads: 0 },
-		]);
+		const loadPapersSpy = vi
+			.spyOn(utilsModule, "loadPapers")
+			.mockResolvedValue([
+				{
+					id: "000000",
+					title: "Dummy",
+					authors: [],
+					date: "",
+					published_in: "",
+					keywords: [],
+					keywords_raw: "",
+					abstract: "",
+					link: "",
+					downloads: 0,
+				},
+			]);
 
 		const ids = await newIds();
 
