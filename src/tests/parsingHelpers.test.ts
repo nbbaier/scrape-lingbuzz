@@ -106,8 +106,8 @@ describe("parseTable", () => {
 		const result = parseTable(document);
 
 		expect(result.get("keywords")).toBe("syntax, semantics");
-		expect(result.get("Published in")).toBe("Linguistic Inquiry");
-		expect(result.get("Downloaded")).toBe("1234 times");
+		expect(result.get("published in")).toBe("Linguistic Inquiry");
+		expect(result.get("downloaded")).toBe("1234 times");
 	});
 
 	test("returns empty map when table is missing", () => {
@@ -149,7 +149,7 @@ describe("parseTable", () => {
 		const document = new JSDOM(html).window.document;
 		const result = parseTable(document);
 
-		expect(result.get("Format")).toBe("PDF");
+		expect(result.get("format")).toBe("PDF");
 	});
 
 	test("trims whitespace from keys and values", () => {
