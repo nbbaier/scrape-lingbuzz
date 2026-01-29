@@ -4,7 +4,7 @@ import {
   parseAbstract,
   parseCenterElement,
   parseTable,
-} from "../parsingHelpers";
+} from "../parsing-helpers";
 
 describe("parseCenterElement", () => {
   test("extracts title, authors, and date from center element", () => {

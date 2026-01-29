@@ -21,7 +21,7 @@ bun run src/index.ts
 bun run src/index.ts
 
 # Alternative entry point for article listing
-bun run src/getArticles.ts
+bun run src/get-articles.ts
 ```
 
 ### Code quality
@@ -62,13 +62,13 @@ The scraper operates in two modes:
 - Scrapes papers in chunks of 5 concurrently
 - Merges new papers with existing data and writes to `papers.json`
 
-**ID detection** (`src/newIds.ts`):
+**ID detection** (`src/new-ids.ts`):
 
 - `getFrontPageIds()`: Scrapes the front page table to extract all visible paper IDs
 - `newestId()`: Returns the highest ID from the front page
 - `newIds()`: Compares front page IDs with existing papers to find new ones
 
-**HTML parsing** (`src/parsingHelpers.ts`):
+**HTML parsing** (`src/parsing-helpers.ts`):
 
 - `parseCenterElement()`: Extracts title, authors, and date from the `<center>` element
 - `parseTable()`: Parses the metadata table into a key-value map
@@ -101,7 +101,7 @@ The scraper operates in two modes:
 ```
 
 **Article type** (`src/types.ts`):
-Used by the alternative scraper in `src/getArticles.ts` for listing view parsing.
+Used by the alternative scraper in `src/get-articles.ts` for listing view parsing.
 
 ### HTML Parsing Strategy
 

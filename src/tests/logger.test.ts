@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../utils/logger";
 
+const ISO_TIMESTAMP_REGEX = /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/;
+
 describe("logger", () => {
   let originalLog: typeof console.log;
   let originalError: typeof console.error;
@@ -10,8 +12,8 @@ describe("logger", () => {
   beforeEach(() => {
     originalLog = console.log;
     originalError = console.error;
-    mockLog = vi.fn(() => {});
-    mockError = vi.fn(() => {});
+    mockLog = vi.fn();
+    mockError = vi.fn();
     console.log = mockLog;
     console.error = mockError;
   });
@@ -70,9 +72,7 @@ describe("logger", () => {
 
     const loggedMessage = mockLog.mock.calls[0][0] as string;
     // ISO timestamp format: YYYY-MM-DDTHH:mm:ss.sssZ
-    expect(loggedMessage).toMatch(
-      /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/
-    );
+    expect(loggedMessage).toMatch(ISO_TIMESTAMP_REGEX);
   });
 
   test("info passes additional data to console.log", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { splitKeywords } from "../splitKeywords";
+import { splitKeywords } from "../split-keywords";
 
 describe("splitKeywords", () => {
   test("splits simple comma-separated keywords", () => {

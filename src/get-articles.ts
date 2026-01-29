@@ -1,3 +1,4 @@
+import { write } from "bun";
 import { BASE_URL, CHUNK_SIZE } from "./constants";
 import type { Article } from "./types";
 import {
@@ -22,7 +23,9 @@ for (const chunk of chunks) {
   });
 
   const results = await Promise.all(chunkPromises);
-  results.forEach((articles) => allArticles.push(...articles));
+  for (const articles of results) {
+    allArticles.push(...articles);
+  }
 }
 
-await Bun.write("articles.json", JSON.stringify(allArticles, null, 2));
+await write("articles.json", JSON.stringify(allArticles, null, 2));

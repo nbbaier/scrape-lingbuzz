@@ -80,14 +80,14 @@ describe("mapWithConcurrency", () => {
     expect(result).toEqual([10, 5, 15]);
   });
 
-  test("handles errors in callback", async () => {
+  test("handles errors in callback", () => {
     const items = [1, 2, 3];
-    const promise = mapWithConcurrency(items, 2, async (x) => {
+    const promise = mapWithConcurrency(items, 2, (x) => {
       if (x === 2) {
-        throw new Error("error");
+        return Promise.reject(new Error("error"));
       }
-      return x;
+      return Promise.resolve(x);
     });
-    expect(promise).rejects.toThrow("error");
+    return expect(promise).rejects.toThrow("error");
   });
 });

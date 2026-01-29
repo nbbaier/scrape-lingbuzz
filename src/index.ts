@@ -1,5 +1,6 @@
+import { write } from "bun";
 import { CHUNK_SIZE, PAPER_ID_LENGTH, PAPER_ID_START } from "./constants";
-import { newestId, newIds } from "./newIds";
+import { newestId, newIds } from "./new-ids";
 import { parsePaper } from "./parsing";
 import type { Paper } from "./schemas";
 import { logger } from "./utils/logger";
@@ -32,14 +33,10 @@ const newIdsList = await newIds();
 
 /**
  * Scrapes papers from the lingbuzz website based on the provided IDs.
+ * Scraped papers are added to the module-level `papers` array and then merged with existing data.
  *
  * @param ids - An array of numbers representing the IDs of the papers to scrape. Defaults to an empty array.
- * @returns A Promise that resolves to an array of Paper objects containing the scraped data.
- * @throws If there is an error while scraping a paper.
- *
- * @example
- * // Scrape papers with IDs [1, 2, 3]
- * await scrapePapers([1, 2, 3]);
+ * @returns A Promise that resolves when scraping and saving is complete.
  */
 async function scrapePapers(ids: number[] = []) {
   await mapWithConcurrency(ids, CHUNK_SIZE, async (id) => {
@@ -65,7 +62,7 @@ async function scrapePapers(ids: number[] = []) {
   const currentPapers = await loadPapers();
   const updatedPapersData = await updatePapers(papers, currentPapers);
 
-  Bun.write(
+  await write(
     "./papers.json",
     JSON.stringify(
       updatedPapersData.filter((item) => Object.keys(item).length !== 0)

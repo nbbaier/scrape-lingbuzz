@@ -43,7 +43,7 @@ export async function withRetry<T>(
  * @param maxRetries - Maximum number of retry attempts (default: MAX_RETRIES from constants).
  * @returns A promise that resolves to the Response.
  */
-export async function fetchWithRetry(
+export function fetchWithRetry(
   url: string,
   options?: RequestInit,
   maxRetries = MAX_RETRIES

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { file, write } from "bun";
 import { JSDOM } from "jsdom";
 import {
   BASE_URL,
@@ -10,6 +11,9 @@ import {
 import type { Article, Author, Paper } from "../types";
 import { logger } from "./logger";
 import { fetchWithRetry } from "./retry";
+
+const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
+const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
 
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
@@ -114,7 +118,7 @@ export const extractArticlesFromRow = (
       firstName: a.textContent?.trim().split(" ")[0] || "",
       lastName: a.textContent?.trim().split(" ")[1] || "",
       authorUrl: a.href || "",
-      username: decodeURI(a.href).match(/\/_person\/(.*)/)?.[1] || "",
+      username: decodeURI(a.href).match(PERSON_USERNAME_REGEX)?.[1] || "",
     };
 
     authors.push(author);
@@ -126,7 +130,7 @@ export const extractArticlesFromRow = (
     : null;
   const title = titleCell.querySelector("a")?.textContent?.trim() || "";
   const titleLink = titleCell.querySelector("a")?.href || "";
-  const idMatch = titleLink.match(/\/lingbuzz\/(\d{6})/);
+  const idMatch = titleLink.match(LINGBUZZ_ID_REGEX);
   const id = idMatch ? idMatch[1] : "000000";
   const paperURL = `https://ling.auf.net/lingbuzz/${id}`;
 
@@ -152,9 +156,9 @@ export async function loadPapers(
   try {
     if (!fs.existsSync(papersFilePath)) {
       logger.info(`Creating ${papersFilePath}`);
-      await Bun.write(papersFilePath, JSON.stringify([]));
+      await write(papersFilePath, JSON.stringify([]));
     }
-    const papersFile = Bun.file(papersFilePath);
+    const papersFile = file(papersFilePath);
     return JSON.parse(await papersFile.text());
   } catch (error) {
     logger.error("Failed to load papers:", error);
@@ -167,12 +171,9 @@ export async function loadPapers(
  *
  * @param {Paper[]} papers - The new papers to be added.
  * @param {Paper[]} newPapers - The current list of papers.
- * @returns {Promise<Paper[]>} The updated list of papers.
+ * @returns {Paper[]} The updated list of papers.
  */
-export async function updatePapers(
-  papers: Paper[],
-  newPapers: Paper[]
-): Promise<Paper[]> {
+export function updatePapers(papers: Paper[], newPapers: Paper[]): Paper[] {
   const merged = new Map<string, Paper>();
   for (const paper of newPapers) {
     merged.set(paper.id, paper);

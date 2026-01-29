@@ -5,6 +5,8 @@ import { logger } from "./utils/logger";
 import { fetchWithRetry } from "./utils/retry";
 import { loadPapers } from "./utils/utils";
 
+const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
+
 /**
  * Retrieves the front page IDs from the website "https://ling.auf.net/".
  *
@@ -23,13 +25,11 @@ async function getFrontPageIds(): Promise<number[]> {
     throw new Error("Failed to scrape front page: main table not found");
   }
 
-  const regex = /\/lingbuzz\/(\d{6})/;
-
   const hrefs = Array.from(mainTable.querySelectorAll("a"))
     .map((a) => a.href)
-    .filter((href) => regex.test(href)) // filter hrefs that match the regex
+    .filter((href) => LINGBUZZ_ID_REGEX.test(href)) // filter hrefs that match the regex
     .map((href) => {
-      const match = regex.exec(href);
+      const match = LINGBUZZ_ID_REGEX.exec(href);
       return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
     })
     .map((id) => Number.parseInt(id, 10));

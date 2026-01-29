@@ -1,7 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { newIds } from "../newIds";
-import * as retryModule from "../utils/retry";
-import * as utilsModule from "../utils/utils";
+import { newIds } from "../new-ids";
 
 // Mock data
 const mockHtml = `
@@ -27,11 +25,13 @@ const mockHtml = `
 describe("newIds", () => {
   test("should return deduplicated IDs", async () => {
     // Mock fetchWithRetry to return our HTML
+    const retryModule = await import("../utils/retry");
     const fetchSpy = vi
       .spyOn(retryModule, "fetchWithRetry")
       .mockResolvedValue(new Response(mockHtml));
 
     // Mock loadPapers to return a dummy paper so newIds logic proceeds
+    const utilsModule = await import("../utils/utils");
     const loadPapersSpy = vi
       .spyOn(utilsModule, "loadPapers")
       .mockResolvedValue([
