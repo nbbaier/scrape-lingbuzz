@@ -2,30 +2,26 @@ import { write } from "bun";
 import { BASE_URL, CHUNK_SIZE } from "./constants";
 import type { Article } from "./types";
 import {
-  chunkArray,
   extractArticlesFromRow,
   generateUrls,
   getPageRows,
+  mapWithConcurrency,
 } from "./utils/utils";
 
 const pagesToScrape = await generateUrls(BASE_URL);
-const allArticles: Article[] = [];
 
-const chunks = chunkArray(pagesToScrape, CHUNK_SIZE);
-
-for (const chunk of chunks) {
-  const chunkPromises = chunk.map(async (page) => {
+const results = await mapWithConcurrency(
+  pagesToScrape,
+  CHUNK_SIZE,
+  async (page) => {
     console.log(`Scraping ${page}`);
     const rows = await getPageRows(page);
     return Array.from(rows)
       .map((row) => extractArticlesFromRow(row))
       .filter((article): article is Article => article !== null);
-  });
-
-  const results = await Promise.all(chunkPromises);
-  for (const articles of results) {
-    allArticles.push(...articles);
   }
-}
+);
+
+const allArticles = results.flat();
 
 await write("articles.json", JSON.stringify(allArticles, null, 2));
