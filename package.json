@@ -13,7 +13,9 @@
     "fix": "ultracite fix",
     "typecheck": "tsgo --noEmit",
     "db:generate": "bun --filter @lingbuzz/db generate",
-    "db:migrate": "bun --filter @lingbuzz/db migrate"
+    "db:migrate": "bun --filter @lingbuzz/db migrate",
+    "scrape": "bun --filter @lingbuzz/scraper start",
+    "api:dev": "bun --filter @lingbuzz/api dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",
