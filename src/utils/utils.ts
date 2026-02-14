@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { file, write } from "bun";
-import { JSDOM } from "jsdom";
+import type { JSDOM } from "jsdom";
 import {
   BASE_URL,
   PAGINATION_FIRST_START,
@@ -31,16 +31,17 @@ export async function getPaperHtml(id: string): Promise<string> {
 export async function getPaperCount(BASE_URL: string): Promise<number> {
   const res = await fetch(BASE_URL);
   const html = await res.text();
-  const document = new JSDOM(html).window.document;
 
-  const paperCountElement = document.body.querySelector("center > b > a");
+  // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
+  const match = html.match(/<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is);
 
-  if (!paperCountElement) {
+  if (!match) {
     logger.error("Paper count element not found");
     process.exit(1);
   }
 
-  const textContent = paperCountElement.textContent || "";
+  // Extract text and strip any internal HTML tags
+  const textContent = match[1].replace(/<[^>]*>/g, "") || "";
   const numbers: number[] = textContent.match(/\d+/g)?.map(Number) || [];
   const paperCount = numbers.at(-1);
 
@@ -74,10 +75,11 @@ export async function generateUrls(
   return urls;
 }
 
-export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
+export async function getPageRows(url: string): Promise<any[]> {
+  const { JSDOM: JSDOMClass } = await import("jsdom");
   const res = await fetchWithRetry(url);
   const html = await res.text();
-  const document = new JSDOM(html).window.document;
+  const document = new JSDOMClass(html).window.document;
 
   const mainTable = document.body
     .querySelectorAll("table")[2]
@@ -98,9 +100,7 @@ export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
   return Array.from(rows);
 }
 
-export const extractArticlesFromRow = (
-  row: HTMLTableRowElement
-): Article | null => {
+export const extractArticlesFromRow = (row: any): Article | null => {
   const cells = row.querySelectorAll("td");
   if (cells.length < 4) {
     return null;
