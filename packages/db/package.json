@@ -1,0 +1,29 @@
+{
+  "name": "@lingbuzz/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./schema/relations": "./src/schema/relations.ts",
+    "./queries/select": "./src/queries/select.ts",
+    "./queries/insert": "./src/queries/insert.ts",
+    "./queries/utils": "./src/queries/query-utils.ts",
+    "./trigger": "./src/trigger.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "gm": "bun run generate && bun run migrate",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.15",
+    "drizzle-orm": "^0.44.7",
+    "text-snake-case": "^1.2.9"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.7"
+  }
+}
