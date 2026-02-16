@@ -156,9 +156,9 @@ This refactor is implemented as a series of stacked PRs. Each phase builds on th
 
 | Phase | Branch | PR Target |
 |-------|--------|-----------|
-| Phase 1 | `refactor/monorepo` | `main` |
-| Phase 2 | `refactor/phase-2` | `refactor/monorepo` |
-| Phase 3+ | `refactor/phase-N` | `refactor/phase-(N-1)` |
+| Phase 1+2 | `refactor/monorepo` | `main` |
+| Phase 3 | `refactor/phase-3` | `refactor/monorepo` |
+| Phase N (4+) | `refactor/phase-N` | `refactor/phase-(N-1)` |
 
 ## Rules
 

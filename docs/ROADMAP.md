@@ -33,9 +33,9 @@ Transform lingbuzz (https://ling.auf.net/lingbuzz) from a static archive into a 
 
 ---
 
-### Phase 2: Scraper Migration + API Scaffolding 🔄 IN PLANNING
+### Phase 2: Scraper Migration + API Scaffolding ✅ DONE
 
-**Status**: Plan complete, implementation pending
+**Status**: Completed (commit `281b1f6`, branch `refactor/monorepo`)
 
 **Scope**:
 1. **Scraper migration** (`packages/scraper`) — combines two scrapers:
@@ -64,7 +64,11 @@ Papers appear on lingbuzz listing with three states:
 **Key files**:
 - See `PHASE2.md` for detailed file-by-file plan, source mappings, test migration strategy
 
-**Timeline**: TBD (large scope, multiple complex modules)
+**What's working**:
+- `bun --filter @lingbuzz/scraper test` — 80 tests pass (8 files)
+- `bun --filter @lingbuzz/scraper typecheck` — clean
+- `bun run check` — biome passes on all new files
+- `bun run api:dev` — Hono dev server starts
 
 ---
 
@@ -244,10 +248,10 @@ Turso's FTS5 support is good but not as featureful as PostgreSQL full-text searc
 
 ## Success Metrics (Post-Phase 2)
 
-- [ ] Scraper runs incrementally and persists new papers to DB
-- [ ] API serves papers + authors + basic search
-- [ ] All 54 migrated tests pass
-- [ ] Biome/ultracite linting passes
+- [x] Scraper runs incrementally and persists new papers to DB
+- [x] API serves papers + authors + basic search
+- [x] 80 migrated + new tests pass
+- [x] Biome/ultracite linting passes
 - [ ] Parity with original scraper (same papers extracted, same accuracy)
 - [ ] Database grows with each scraper run
 - [ ] Zero errors in production scrape runs
