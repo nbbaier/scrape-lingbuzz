@@ -148,6 +148,36 @@ The workflow (`.github/workflows/scrape.yml`):
 
 ---
 
+# Stacked PR Workflow
+
+This refactor is implemented as a series of stacked PRs. Each phase builds on the previous one.
+
+## Branch Structure
+
+| Phase | Branch | PR Target |
+|-------|--------|-----------|
+| Phase 1 | `refactor/monorepo` | `main` |
+| Phase 2 | `refactor/phase-2` | `refactor/monorepo` |
+| Phase 3+ | `refactor/phase-N` | `refactor/phase-(N-1)` |
+
+## Rules
+
+1. **Create new phase branches from the tip of the previous phase branch:**
+   ```bash
+   git checkout -b refactor/phase-N refactor/phase-(N-1)
+   ```
+
+2. **Each PR targets the branch below it**, not `main` (except Phase 1 which targets `main`).
+
+3. **If the base branch is updated**, rebase onto it:
+   ```bash
+   git rebase refactor/phase-(N-1)
+   ```
+
+4. **When a phase merges into `main`**, retarget the next phase's PR to `main`.
+
+---
+
 # Ultracite Code Standards
 
 This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting via Biome.
