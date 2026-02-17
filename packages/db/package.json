@@ -9,6 +9,7 @@
     "./schema/relations": "./src/schema/relations.ts",
     "./queries/select": "./src/queries/select.ts",
     "./queries/insert": "./src/queries/insert.ts",
+    "./queries/search": "./src/queries/search.ts",
     "./queries/utils": "./src/queries/query-utils.ts",
     "./trigger": "./src/trigger.ts"
   },
@@ -16,6 +17,8 @@
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "gm": "bun run generate && bun run migrate",
+    "rebuild:fts": "bun run scripts/rebuild-fts.ts",
+    "setup:fts": "bun run scripts/setup-fts5.ts",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

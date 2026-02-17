@@ -14,6 +14,7 @@
     "typecheck": "tsgo --noEmit",
     "db:generate": "bun --filter @lingbuzz/db generate",
     "db:migrate": "bun --filter @lingbuzz/db migrate",
+    "db:rebuild-fts": "bun run --filter @lingbuzz/db rebuild:fts",
     "scrape": "bun --filter @lingbuzz/scraper start",
     "api:dev": "bun --filter @lingbuzz/api dev"
   },
