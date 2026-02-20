@@ -72,17 +72,22 @@ Papers appear on lingbuzz listing with three states:
 
 ---
 
-### Phase 3: Full-Text Search (FTS5)
+### Phase 3: Full-Text Search (FTS5) ✅ DONE
 
-**Status**: Not started
+**Status**: Completed (commit `6a2e8a1`, branch `refactor/monorepo`)
 
-**Deliverables**:
-- Add FTS5 virtual tables to Turso schema
-- Implement search queries in @lingbuzz/db
-- Wire up API `/search?q=...` endpoint to use FTS5 instead of LIKE
-- Add indexing strategy for title, abstract, keywords, author names
+**Deliverables completed**:
+- Added FTS5 virtual table and sync triggers in DB migration
+- Implemented typed search queries in `@lingbuzz/db`
+- Wired API `/search` endpoint to FTS5 search and count
+- Added field scoping (`all`, `title`, `abstract`, `keywords`, `authors`) with pagination and syntax error handling
+- Added manual reindex scripts (`db:rebuild-fts`, `setup:fts`)
 
-**Dependencies**: Requires Phase 2 complete (API scaffolding)
+**What's working**:
+- FTS5 migration exists at `packages/db/migrations/20260217103528_fts5_search.sql`
+- Search query module at `packages/db/src/queries/search.ts`
+- API route uses DB search queries at `apps/api/src/routes/search.ts`
+- Root script `bun run db:rebuild-fts` is available for maintenance
 
 ---
 
@@ -233,7 +238,7 @@ Potential future work (not scheduled):
 ## Known Constraints & Gotchas
 
 ### DB Connection in Workers
-@lingbuzz/db creates connection eagerly from `process.env`. CF Workers use `Env` bindings. Phase 2 uses middleware workaround (set `process.env` from Worker bindings). Phase 3+ should refactor to factory pattern.
+@lingbuzz/db creates connection eagerly from `process.env`. CF Workers use `Env` bindings. Phase 2 uses middleware workaround (set `process.env` from Worker bindings). Phase 4+ should refactor to factory pattern.
 
 ### jsdom + Workers
 jsdom requires Node APIs, can't run in CF Workers. Scraper must run on Bun (VPS, cron, or separate Worker-incompatible environment).
@@ -273,5 +278,7 @@ Turso's FTS5 support is good but not as featureful as PostgreSQL full-text searc
 
 - Phase 1 Commit: `e03a9ea` (Bun monorepo + @lingbuzz/db)
 - Phase 2 Plan: `docs/PHASE2.md` (detailed implementation guide)
+- Phase 3 Plan: `docs/PHASE3.md` (FTS5 implementation guide)
+- Phase 3 Commit: `6a2e8a1` (FTS5 search across DB and API)
 - Original scrapers: `src/` (root), `/Users/nbbaier/Code/slb/src/`
 - Frontend reference: `/Users/nbbaier/Code/modern-lingbuzz/`
