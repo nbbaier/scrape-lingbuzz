@@ -19,6 +19,7 @@
     "gm": "bun run generate && bun run migrate",
     "rebuild:fts": "bun run scripts/rebuild-fts.ts",
     "setup:fts": "bun run scripts/setup-fts5.ts",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

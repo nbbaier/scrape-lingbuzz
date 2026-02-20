@@ -178,9 +178,9 @@ function isFtsSyntaxError(error: unknown): boolean {
     return false;
   }
 
-  const message = error.message.toLowerCase();
+  const messages = collectErrorMessages(error);
   return FTS_SYNTAX_ERROR_PATTERNS.some((pattern) =>
-    message.includes(pattern.toLowerCase())
+    messages.some((message) => message.includes(pattern.toLowerCase()))
   );
 }
 
@@ -200,4 +200,18 @@ function clamp(value: number, min: number, max: number): number {
     return max;
   }
   return value;
+}
+
+function collectErrorMessages(error: Error): string[] {
+  const messages: string[] = [];
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current instanceof Error && !visited.has(current)) {
+    messages.push(current.message.toLowerCase());
+    visited.add(current);
+    current = current.cause;
+  }
+
+  return messages;
 }
