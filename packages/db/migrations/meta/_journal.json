@@ -225,6 +225,13 @@
       "when": 1771346206426,
       "tag": "20260217103528_fts5_search",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1771620243242,
+      "tag": "20260220204403_elite_nicolaos",
+      "breakpoints": true
     }
   ]
 }

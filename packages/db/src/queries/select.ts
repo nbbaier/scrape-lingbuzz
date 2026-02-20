@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray, isNull } from "drizzle-orm";
 import db from "..";
 import {
   type authors,
@@ -141,4 +141,33 @@ export async function selectPapersByKeyword(
   const result = limit ? await coreQuery.limit(limit) : await coreQuery;
 
   return result;
+}
+
+/// UNEMBEDDED PAPERS ///
+export async function selectUnembeddedPapers({
+  limit,
+}: {
+  limit?: number;
+} = {}) {
+  const result = await db
+    .select({
+      paperId: papers.paperId,
+      lingbuzzId: papers.lingbuzzId,
+      paperTitle: papers.paperTitle,
+      abstract: papers.abstract,
+    })
+    .from(papers)
+    .where(isNull(papers.embeddedAt))
+    .limit(limit ?? 500);
+  return result;
+}
+
+export async function markPapersEmbedded(paperIds: number[]) {
+  if (paperIds.length === 0) {
+    return;
+  }
+  await db
+    .update(papers)
+    .set({ embeddedAt: new Date() })
+    .where(inArray(papers.paperId, paperIds));
 }

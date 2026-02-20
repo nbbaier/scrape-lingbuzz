@@ -5,6 +5,7 @@ import {
   searchPapersCount,
 } from "@lingbuzz/db/queries/search";
 import { Hono } from "hono";
+import { clamp, parseInteger } from "../utils";
 
 const search = new Hono();
 const DEFAULT_LIMIT = 20;
@@ -78,21 +79,6 @@ search.get("/", async (c) => {
     return c.json({ error: "Failed to search papers" }, 500);
   }
 });
-
-function parseInteger(value: string | undefined, fallback: number): number {
-  const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  if (value < min) {
-    return min;
-  }
-  if (value > max) {
-    return max;
-  }
-  return value;
-}
 
 function isSearchField(field: string): field is SearchField {
   return SEARCH_FIELDS.includes(field as SearchField);

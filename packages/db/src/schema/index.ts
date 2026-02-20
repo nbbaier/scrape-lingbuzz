@@ -57,6 +57,7 @@ export const papers = sqliteTable(
     downloads: t.integer(),
     downloadUrl: t.text(),
     paperUrl: t.text(),
+    embeddedAt: t.integer({ mode: "timestamp" }),
     //  ...recordTimestampColumns(t),
     ...rowTimestampColumns(t),
   }),
