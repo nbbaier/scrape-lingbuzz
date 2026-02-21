@@ -27,17 +27,14 @@ bun run src/get-articles.ts
 ### Code quality
 
 ```bash
-# Format code
-bun biome format --write .
-
-# Lint code
-bun biome lint .
-
 # Check formatting and linting
-bun biome check .
+bun run check
 
 # Fix auto-fixable issues
-bun biome check --write .
+bun run fix
+
+# Type check
+bun run typecheck
 ```
 ## Code Architecture
 
@@ -59,8 +56,8 @@ The scraper operates in two modes:
 
 - Loads existing papers from `papers.json`
 - Calls `newIds()` to detect new papers on the front page
-- Scrapes papers in chunks of 5 concurrently
-- Merges new papers with existing data and writes to `papers.json`
+- Scrapes papers in chunks of 5 concurrently using `mapWithConcurrency()`
+- Merges new papers with existing data, strips control characters, and writes to `papers.json`
 
 **ID detection** (`src/new-ids.ts`):
 
@@ -68,22 +65,40 @@ The scraper operates in two modes:
 - `newestId()`: Returns the highest ID from the front page
 - `newIds()`: Compares front page IDs with existing papers to find new ones
 
-**HTML parsing** (`src/parsing-helpers.ts`):
+**Main Parsing Logic** (`src/parsing.ts`):
+
+- `parsePaper()`: Orchestrates the parsing of a single paper's HTML
+- `normalizeText()`: Strips control characters and converts double quotes to single quotes
+- `extractRawAbstract()`: Extracts the abstract text from specific DOM nodes
+
+**HTML parsing helpers** (`src/parsing-helpers.ts`):
 
 - `parseCenterElement()`: Extracts title, authors, and date from the `<center>` element
 - `parseTable()`: Parses the metadata table into a key-value map
-- `parseAbstract()`: Cleans abstract text by normalizing quotes and whitespace
+- `parseAbstract()`: Cleans abstract text by normalizing whitespace
 
-**Data utilities** (`src/utils/utils.ts`):
+**Validation & Types** (`src/schemas.ts` and `src/types.ts`):
 
-- `getPaperHtml()`: Fetches HTML for a specific paper ID
-- `loadPapers()`: Loads existing papers.json (creates empty file if missing)
-- `updatePapers()`: Merges new papers into existing data without duplicates
-- `chunkArray()`: Splits array into chunks for concurrent processing
+- `PaperSchema`: Zod schema for validating paper metadata
+- `ArticleSchema`: Zod schema for article listing data
+- Both files define TypeScript types inferred from or corresponding to these schemas
+
+**Keyword Processing** (`src/split-keywords.ts`):
+
+- `splitKeywords()`: Splits keyword strings by commas (respecting brackets) and other delimiters
+
+**Data utilities** (`src/utils/`):
+
+- `getPaperHtml()` (`utils.ts`): Fetches HTML for a specific paper ID
+- `loadPapers()` (`utils.ts`): Loads existing papers.json (creates empty file if missing)
+- `updatePapers()` (`utils.ts`): Merges new papers into existing data without duplicates
+- `mapWithConcurrency()` (`utils.ts`): Generic utility for concurrent execution in chunks
+- `logger` (`logger.ts`): Winston-based logger for consistent output
+- `withRetry()` (`retry.ts`): Wrapper for retrying failed operations with exponential backoff
 
 ### Data Models
 
-**Paper type** (`src/types.ts`):
+**Paper type** (from `src/schemas.ts`):
 
 ```typescript
 {
@@ -100,7 +115,7 @@ The scraper operates in two modes:
 }
 ```
 
-**Article type** (`src/types.ts`):
+**Article type** (from `src/schemas.ts`):
 Used by the alternative scraper in `src/get-articles.ts` for listing view parsing.
 
 ### HTML Parsing Strategy
@@ -108,19 +123,19 @@ Used by the alternative scraper in `src/get-articles.ts` for listing view parsin
 The lingbuzz website has fragile HTML structure that relies on:
 
 - Table index positions (e.g., `querySelectorAll("table")[2]`)
-- DOM node indexing (e.g., `childNodes[5]`)
+- DOM node indexing (e.g., `childNodes[5]` for the abstract)
 - Specific selector paths (e.g., `body > center`, `body > table`)
 
-When the scraper fails, these hardcoded selectors are the first place to check.
+When the scraper fails, these hardcoded selectors in `src/parsing.ts` and `src/parsing-helpers.ts` are the first place to check.
 
 ### Data Cleaning
 
 Paper metadata undergoes several transformations:
 
 - Double quotes → single quotes (for JSON compatibility)
-- Control characters stripped (regex: `/[\u0000-\u001F\u007F-\u009F]/g`)
+- Control characters stripped (custom `stripControlChars` and regex)
 - Multiple spaces collapsed to single space
-- Keywords split by commas (but ignoring commas inside brackets/parens)
+- Keywords split by commas (but ignoring commas inside brackets/parens) and other delimiters (·, -, –, , /)
 
 ### GitHub Actions Integration
 
@@ -131,31 +146,21 @@ The workflow (`.github/workflows/scrape.yml`):
 3. Formats `papers.json` using `jq`
 4. Commits changes with timestamp if data changed
 
-## Code Style
-
-- **Formatter**: Biome with tabs, 90 character line width, double quotes
-- **Linting**: Biome recommended rules
-- Papers.json is excluded from Biome checks
-,cla
-
+---
 
 # Ultracite Code Standards
 
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
+This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting via Biome.
 
 ## Quick Reference
 
-- **Format code**: `bun x ultracite fix`
-- **Check for issues**: `bun x ultracite check`
-- **Diagnose setup**: `bun x ultracite doctor`
-
-Biome (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
-
----
+- **Format code**: `bun run fix`
+- **Check for issues**: `bun run check`
+- **Type check**: `bun run typecheck`
 
 ## Core Principles
 
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
+Write code that is **performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
 
 ### Type Safety & Explicitness
 
@@ -181,21 +186,6 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 - Handle errors appropriately in async code with try-catch blocks
 - Don't use async functions as Promise executors
 
-### React & JSX
-
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
-
 ### Error Handling & Debugging
 
 - Remove `console.log`, `debugger`, and `alert` statements from production code
@@ -213,33 +203,14 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 
 ### Security
 
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
 - Validate and sanitize user input
+- Avoid `eval()` or dangerous string-to-code executions
 
 ### Performance
 
 - Avoid spread syntax in accumulators within loops
 - Use top-level regex literals instead of creating them in loops
 - Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
-
----
 
 ## Testing
 
@@ -256,9 +227,4 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 2. **Meaningful naming** - Use descriptive names for functions, variables, and types
 3. **Architecture decisions** - Component structure, data flow, and API design
 4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
-
----
-
-Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+5. **Documentation** - Add comments for complex logic, but prefer self-documenting code
