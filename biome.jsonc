@@ -4,6 +4,6 @@
   "javascript": { "globals": ["Bun"] },
   "files": {
     "maxSize": 20971520,
-    "includes": ["**/*", "!!**/papers.json"]
+    "includes": ["**/*", "!!**/papers.json", "!**/migrations"]
   }
 }

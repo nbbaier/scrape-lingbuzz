@@ -1,0 +1,14 @@
+name = "lingbuzz-api"
+main = "src/index.ts"
+compatibility_date = "2025-02-07"
+
+# Turso credentials should be set via `wrangler secret put`:
+# wrangler secret put TURSO_DATABASE_URL
+# wrangler secret put TURSO_AUTH_TOKEN
+
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "lingbuzz-papers"
