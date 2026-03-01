@@ -25,16 +25,15 @@ async function getFrontPageIds(): Promise<number[]> {
     throw new Error("Failed to scrape front page: main table not found");
   }
 
-  const hrefs = Array.from(mainTable.querySelectorAll("a"))
-    .map((a) => a.href)
-    .filter((href) => LINGBUZZ_ID_REGEX.test(href)) // filter hrefs that match the regex
-    .map((href) => {
-      const match = LINGBUZZ_ID_REGEX.exec(href);
-      return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
-    })
-    .map((id) => Number.parseInt(id, 10));
+  const ids = new Set<number>();
+  for (const a of mainTable.querySelectorAll("a")) {
+    const match = LINGBUZZ_ID_REGEX.exec(a.href);
+    if (match) {
+      ids.add(Number.parseInt(match[1], 10));
+    }
+  }
 
-  return [...new Set(hrefs)];
+  return Array.from(ids);
 }
 
 /**
