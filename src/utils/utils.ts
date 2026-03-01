@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import { file, write } from "bun";
-import type { JSDOM } from "jsdom";
 import {
   BASE_URL,
   PAGINATION_FIRST_START,
@@ -33,7 +32,9 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
   const html = await res.text();
 
   // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
-  const match = html.match(/<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is);
+  const match = html.match(
+    /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is
+  );
 
   if (!match) {
     logger.error("Paper count element not found");
@@ -143,23 +144,38 @@ export const extractArticlesFromRow = (row: any): Article | null => {
   };
 };
 
+let cachedPapers: Paper[] | null = null;
+let cachedPapersFilePath: string | null = null;
+
 /**
  * Loads previously scraped papers data from a JSON file.
  *
  * @param papersFilePath - The path to the papers JSON file. Defaults to PAPERS_FILE_PATH.
+ * @param forceReload - Whether to bypass the cache and reload the file. Defaults to false.
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
 export async function loadPapers(
-  papersFilePath = PAPERS_FILE_PATH
+  papersFilePath = PAPERS_FILE_PATH,
+  forceReload = false
 ): Promise<Paper[]> {
+  if (
+    !forceReload &&
+    cachedPapers !== null &&
+    cachedPapersFilePath === papersFilePath
+  ) {
+    return cachedPapers;
+  }
+
   try {
     if (!fs.existsSync(papersFilePath)) {
       logger.info(`Creating ${papersFilePath}`);
       await write(papersFilePath, JSON.stringify([]));
     }
     const papersFile = file(papersFilePath);
-    return JSON.parse(await papersFile.text());
+    cachedPapers = JSON.parse(await papersFile.text());
+    cachedPapersFilePath = papersFilePath;
+    return cachedPapers as Paper[];
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
