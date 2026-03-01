@@ -1,4 +1,4 @@
-import { write } from "bun";
+import { file, write } from "bun";
 import { CHUNK_SIZE, PAPER_ID_LENGTH, PAPER_ID_START } from "./constants";
 import { newestId, newIds } from "./new-ids";
 import { parsePaper } from "./parsing";
@@ -99,14 +99,49 @@ function printStats() {
 
 const currentPapers = await loadPapers();
 
-if (currentPapers.length === 0) {
+const ID_CACHE_FILE = "./id-cache.json";
+const BATCH_SIZE = 500;
+
+let cachedIds: number[] = [];
+const cacheFile = file(ID_CACHE_FILE);
+
+if (await cacheFile.exists()) {
+  try {
+    cachedIds = JSON.parse(await cacheFile.text());
+  } catch (e) {
+    logger.error("Failed to parse id-cache.json, ignoring cache", e);
+  }
+}
+
+if (currentPapers.length === 0 && cachedIds.length === 0) {
   const newestPaper = await newestId();
-  const ids = Array.from(
+  cachedIds = Array.from(
     { length: newestPaper - 1 },
     (_, i) => i + PAPER_ID_START
   );
-  logger.info("Scraping all papers");
-  await scrapePapers(ids);
+  logger.info(`Caching ${cachedIds.length} paper IDs for initial scrape`);
+  await write(ID_CACHE_FILE, JSON.stringify(cachedIds));
+}
+
+if (cachedIds.length > 0) {
+  const idsToScrape = cachedIds.slice(0, BATCH_SIZE);
+  logger.info(
+    `Scraping batch of ${idsToScrape.length} papers from cache (${cachedIds.length} total cached)`
+  );
+  await scrapePapers(idsToScrape);
+
+  const remainingIds = cachedIds.slice(BATCH_SIZE);
+  if (remainingIds.length > 0) {
+    await write(ID_CACHE_FILE, JSON.stringify(remainingIds));
+    logger.info(`Updated cache with ${remainingIds.length} remaining IDs`);
+  } else {
+    const fs = await import("node:fs");
+    if (fs.existsSync(ID_CACHE_FILE)) {
+      fs.unlinkSync(ID_CACHE_FILE);
+    }
+    logger.info("Cache empty, removed id-cache.json");
+  }
+
   logger.info("Scraping complete");
   printStats();
 } else if (newIdsList.length > 0) {
