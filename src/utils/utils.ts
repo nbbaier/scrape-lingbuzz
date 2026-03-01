@@ -1,6 +1,4 @@
-import fs from "node:fs";
 import { file, write } from "bun";
-import type { JSDOM } from "jsdom";
 import {
   BASE_URL,
   PAGINATION_FIRST_START,
@@ -11,6 +9,16 @@ import {
 import type { Article, Author, Paper } from "../types";
 import { logger } from "./logger";
 import { fetchWithRetry } from "./retry";
+
+let cachedJSDOM: typeof import("jsdom").JSDOM | null = null;
+
+async function getJSDOM() {
+  if (!cachedJSDOM) {
+    const { JSDOM } = await import("jsdom");
+    cachedJSDOM = JSDOM;
+  }
+  return cachedJSDOM;
+}
 
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
@@ -33,7 +41,9 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
   const html = await res.text();
 
   // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
-  const match = html.match(/<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is);
+  const match = html.match(
+    /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is
+  );
 
   if (!match) {
     logger.error("Paper count element not found");
@@ -76,7 +86,7 @@ export async function generateUrls(
 }
 
 export async function getPageRows(url: string): Promise<any[]> {
-  const { JSDOM: JSDOMClass } = await import("jsdom");
+  const JSDOMClass = await getJSDOM();
   const res = await fetchWithRetry(url);
   const html = await res.text();
   const document = new JSDOMClass(html).window.document;
@@ -143,23 +153,35 @@ export const extractArticlesFromRow = (row: any): Article | null => {
   };
 };
 
+const papersCache = new Map<string, Paper[]>();
+
 /**
  * Loads previously scraped papers data from a JSON file.
+ * Results are cached in memory — subsequent calls with the same path return cached data.
  *
  * @param papersFilePath - The path to the papers JSON file. Defaults to PAPERS_FILE_PATH.
+ * @param forceReload - If true, bypasses the cache and re-reads from disk.
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
 export async function loadPapers(
-  papersFilePath = PAPERS_FILE_PATH
+  papersFilePath = PAPERS_FILE_PATH,
+  forceReload = false
 ): Promise<Paper[]> {
+  const cached = forceReload ? undefined : papersCache.get(papersFilePath);
+  if (cached) {
+    return cached;
+  }
+
   try {
-    if (!fs.existsSync(papersFilePath)) {
+    const bunFile = file(papersFilePath);
+    if (!(await bunFile.exists())) {
       logger.info(`Creating ${papersFilePath}`);
       await write(papersFilePath, JSON.stringify([]));
     }
-    const papersFile = file(papersFilePath);
-    return JSON.parse(await papersFile.text());
+    const papers: Paper[] = JSON.parse(await file(papersFilePath).text());
+    papersCache.set(papersFilePath, papers);
+    return papers;
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");

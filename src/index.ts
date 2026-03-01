@@ -11,6 +11,9 @@ import {
   updatePapers,
 } from "./utils/utils";
 
+const ID_CACHE_PATH = "./id-cache.json";
+const BATCH_SIZE = 500;
+
 // Scraping statistics
 interface ScrapeStats {
   startTime: number;
@@ -97,17 +100,58 @@ function printStats() {
   }
 }
 
+async function loadIdCache(): Promise<number[]> {
+  const cacheFile = Bun.file(ID_CACHE_PATH);
+  if (await cacheFile.exists()) {
+    return JSON.parse(await cacheFile.text());
+  }
+  return [];
+}
+
+async function saveIdCache(ids: number[]) {
+  await write(ID_CACHE_PATH, JSON.stringify(ids));
+}
+
+async function removeIdCache() {
+  const { unlink } = await import("node:fs/promises");
+  try {
+    await unlink(ID_CACHE_PATH);
+  } catch {
+    // file may not exist
+  }
+}
+
 const currentPapers = await loadPapers();
 
 if (currentPapers.length === 0) {
-  const newestPaper = await newestId();
-  const ids = Array.from(
-    { length: newestPaper - 1 },
-    (_, i) => i + PAPER_ID_START
+  let cachedIds = await loadIdCache();
+
+  if (cachedIds.length === 0) {
+    const newestPaper = await newestId();
+    cachedIds = Array.from(
+      { length: newestPaper - 1 },
+      (_, i) => i + PAPER_ID_START
+    );
+    await saveIdCache(cachedIds);
+    logger.info(`Cached ${cachedIds.length} paper IDs for batched scraping`);
+  }
+
+  const batch = cachedIds.slice(0, BATCH_SIZE);
+  const remaining = cachedIds.slice(BATCH_SIZE);
+
+  logger.info(
+    `Scraping batch of ${batch.length} papers (${remaining.length} remaining)`
   );
-  logger.info("Scraping all papers");
-  await scrapePapers(ids);
-  logger.info("Scraping complete");
+  await scrapePapers(batch);
+
+  if (remaining.length > 0) {
+    await saveIdCache(remaining);
+    logger.info(`${remaining.length} papers remaining in cache for next run`);
+  } else {
+    await removeIdCache();
+    logger.info("Initial scraping backlog complete, cache cleared");
+  }
+
   printStats();
 } else if (newIdsList.length > 0) {
   logger.info(`Scraping ${newIdsList.length} new papers`);

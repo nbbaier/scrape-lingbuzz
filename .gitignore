@@ -130,3 +130,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .cachebro/
+id-cache.json

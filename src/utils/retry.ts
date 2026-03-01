@@ -1,8 +1,20 @@
-import { MAX_RETRIES, RETRY_BASE_DELAY_MS } from "../constants";
+import {
+  FETCH_TIMEOUT_MS,
+  MAX_RETRIES,
+  RETRY_BASE_DELAY_MS,
+} from "../constants";
 import { logger } from "./logger";
 
+class RetryAfterError extends Error {
+  retryAfterMs: number;
+  constructor(message: string, retryAfterMs: number) {
+    super(message);
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
 /**
- * Wraps an async function with retry logic using exponential backoff.
+ * Wraps an async function with retry logic using exponential backoff with jitter.
  *
  * @param fn - The async function to retry.
  * @param maxRetries - Maximum number of retry attempts (default: MAX_RETRIES from constants).
@@ -23,9 +35,18 @@ export async function withRetry<T>(
       lastError = error as Error;
 
       if (attempt < maxRetries) {
-        const delay = baseDelayMs * 2 ** attempt;
+        let delay: number;
+
+        if (error instanceof RetryAfterError) {
+          delay = error.retryAfterMs;
+        } else {
+          const baseDelay = baseDelayMs * 2 ** attempt;
+          const jitter = baseDelay * 0.2 * (2 * Math.random() - 1);
+          delay = baseDelay + jitter;
+        }
+
         logger.info(
-          `Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`
+          `Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${Math.round(delay)}ms...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
@@ -36,7 +57,8 @@ export async function withRetry<T>(
 }
 
 /**
- * Fetches a URL with automatic retry on failure.
+ * Fetches a URL with automatic retry on failure, timeout via AbortController,
+ * and HTTP 429 handling with Retry-After support.
  *
  * @param url - The URL to fetch.
  * @param options - Optional fetch options.
@@ -49,10 +71,29 @@ export function fetchWithRetry(
   maxRetries = MAX_RETRIES
 ): Promise<Response> {
   return withRetry(async () => {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const retryMs = retryAfter
+          ? Number.parseInt(retryAfter, 10) * 1000
+          : RETRY_BASE_DELAY_MS;
+        throw new RetryAfterError("HTTP 429: Too Many Requests", retryMs);
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return response;
   }, maxRetries);
 }

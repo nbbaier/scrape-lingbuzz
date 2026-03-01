@@ -1,4 +1,3 @@
-
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
 
 function originalLogic(anchors: any[]): number[] {
@@ -28,10 +27,10 @@ function optimizedLogic(anchors: any[]): number[] {
 }
 
 // Generate a large mock data
-const numLinks = 100000;
+const numLinks = 100_000;
 const anchors = [];
 for (let i = 0; i < numLinks; i++) {
-  const id = (100000 + (i % 1000)).toString();
+  const id = (100_000 + (i % 1000)).toString();
   anchors.push({ href: `http://ling.auf.net/lingbuzz/${id}` });
   anchors.push({ href: `http://example.com/${i}` });
 }
@@ -55,5 +54,8 @@ console.timeEnd("Optimized");
 // Verify they return the same results
 const res1 = originalLogic(anchors);
 const res2 = optimizedLogic(anchors);
-console.log("Results match:", JSON.stringify(res1.sort()) === JSON.stringify(res2.sort()));
+console.log(
+  "Results match:",
+  JSON.stringify(res1.sort()) === JSON.stringify(res2.sort())
+);
 console.log("Result size:", res1.length);
