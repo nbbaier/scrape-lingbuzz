@@ -15,6 +15,8 @@ import { fetchWithRetry } from "./retry";
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
 
+let jsdomCache: any = null;
+
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
  * Uses retry logic with exponential backoff for resilience.
@@ -76,7 +78,11 @@ export async function generateUrls(
 }
 
 export async function getPageRows(url: string): Promise<any[]> {
-  const { JSDOM: JSDOMClass } = await import("jsdom");
+  if (!jsdomCache) {
+    const { JSDOM } = await import("jsdom");
+    jsdomCache = JSDOM;
+  }
+  const JSDOMClass = jsdomCache;
   const res = await fetchWithRetry(url);
   const html = await res.text();
   const document = new JSDOMClass(html).window.document;
