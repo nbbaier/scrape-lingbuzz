@@ -16,3 +16,7 @@ export const PAGINATION_INCREMENT = 100; // Increment for subsequent pages
 // Paper ID configuration
 export const PAPER_ID_LENGTH = 6; // Length of zero-padded paper IDs
 export const PAPER_ID_START = 2; // First valid paper ID
+
+// Batched scraping configuration
+export const BATCH_SIZE = 500; // Number of papers per batch during initial scrape
+export const ID_CACHE_PATH = "./id-cache.json"; // Cache file for remaining paper IDs

@@ -1,5 +1,12 @@
+import { unlink } from "node:fs/promises";
 import { write } from "bun";
-import { CHUNK_SIZE, PAPER_ID_LENGTH, PAPER_ID_START } from "./constants";
+import {
+  BATCH_SIZE,
+  CHUNK_SIZE,
+  ID_CACHE_PATH,
+  PAPER_ID_LENGTH,
+  PAPER_ID_START,
+} from "./constants";
 import { newestId, newIds } from "./new-ids";
 import { parsePaper } from "./parsing";
 import type { Paper } from "./schemas";
@@ -10,9 +17,6 @@ import {
   mapWithConcurrency,
   updatePapers,
 } from "./utils/utils";
-
-const ID_CACHE_PATH = "./id-cache.json";
-const BATCH_SIZE = 500;
 
 // Scraping statistics
 interface ScrapeStats {
@@ -101,11 +105,12 @@ function printStats() {
 }
 
 async function loadIdCache(): Promise<number[]> {
-  const cacheFile = Bun.file(ID_CACHE_PATH);
-  if (await cacheFile.exists()) {
+  try {
+    const cacheFile = Bun.file(ID_CACHE_PATH);
     return JSON.parse(await cacheFile.text());
+  } catch {
+    return [];
   }
-  return [];
 }
 
 async function saveIdCache(ids: number[]) {
@@ -113,7 +118,6 @@ async function saveIdCache(ids: number[]) {
 }
 
 async function removeIdCache() {
-  const { unlink } = await import("node:fs/promises");
   try {
     await unlink(ID_CACHE_PATH);
   } catch {

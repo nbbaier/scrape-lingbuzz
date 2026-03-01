@@ -74,6 +74,20 @@ export function fetchWithRetry(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
+    // If the caller provided their own signal, forward its abort to our controller
+    const callerSignal = options?.signal;
+    if (callerSignal) {
+      if (callerSignal.aborted) {
+        controller.abort(callerSignal.reason);
+      } else {
+        callerSignal.addEventListener(
+          "abort",
+          () => controller.abort(callerSignal.reason),
+          { once: true }
+        );
+      }
+    }
+
     try {
       const response = await fetch(url, {
         ...options,
