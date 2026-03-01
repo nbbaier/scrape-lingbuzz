@@ -1,4 +1,3 @@
-import { JSDOM } from "jsdom";
 import { BASE_URL } from "./constants";
 import type { Paper } from "./types";
 import { logger } from "./utils/logger";
@@ -13,9 +12,10 @@ const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
  * @returns A promise that resolves to an array of numbers representing the front page IDs.
  */
 async function getFrontPageIds(): Promise<number[]> {
+  const { JSDOM: JSDOMClass } = await import("jsdom");
   const res = await fetchWithRetry(BASE_URL);
   const html = await res.text();
-  const document = new JSDOM(html).window.document;
+  const document = new JSDOMClass(html).window.document;
 
   const tables = document.body.querySelectorAll("table");
   const mainTable =

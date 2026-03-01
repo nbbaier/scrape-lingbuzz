@@ -1,4 +1,3 @@
-import { JSDOM } from "jsdom";
 import {
   parseAbstract,
   parseCenterElement,
@@ -100,8 +99,9 @@ const extractRawAbstract = (document: Document): string => {
   return body.childNodes[5]?.textContent ?? "";
 };
 
-export function parsePaper(html: string, paperId: string): Paper | null {
-  const document = new JSDOM(html).window.document;
+export async function parsePaper(html: string, paperId: string): Promise<Paper | null> {
+  const { JSDOM: JSDOMClass } = await import("jsdom");
+  const document = new JSDOMClass(html).window.document;
   const pageTitle = document.querySelector("title")?.textContent;
 
   if (pageTitle === "lingbuzz - archive of linguistics articles") {

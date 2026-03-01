@@ -85,6 +85,7 @@ describe("fetchWithRetry", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
   });
 
   test("returns response on successful fetch", async () => {
@@ -171,5 +172,31 @@ describe("fetchWithRetry", () => {
       "https://example.com",
       options
     );
+  });
+
+  test("respects Retry-After header with 429 status", async () => {
+    let attempts = 0;
+    const errorResponse = new Response("Too Many Requests", {
+      status: 429,
+      statusText: "Too Many Requests",
+      headers: { "Retry-After": "2" },
+    });
+    const successResponse = new Response("success", { status: 200 });
+
+    setFetchMock(() => {
+      attempts++;
+      if (attempts < 2) {
+        return Promise.resolve(errorResponse);
+      }
+      return Promise.resolve(successResponse);
+    });
+
+    const startTime = Date.now();
+    const result = await fetchWithRetry("https://example.com", undefined, 3);
+    const duration = Date.now() - startTime;
+
+    expect(result).toBe(successResponse);
+    expect(duration).toBeGreaterThanOrEqual(2000);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 });

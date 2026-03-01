@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { parsePaper } from "../parsing";
 
 describe("parsePaper", () => {
-  test("successfully parses a valid paper HTML", () => {
+  test("successfully parses a valid paper HTML", async () => {
     const html = `
             <!DOCTYPE html>
             <html>
@@ -27,7 +27,7 @@ describe("parsePaper", () => {
             </html>
         `;
 
-    const result = parsePaper(html, "001234");
+    const result = await parsePaper(html, "001234");
 
     expect(result).not.toBeNull();
     expect(result?.id).toBe("001234");
@@ -43,18 +43,18 @@ describe("parsePaper", () => {
     expect(result?.link).toBe("https://ling.auf.net/lingbuzz/001234");
   });
 
-  test("returns null when title matches the main page title (no paper)", () => {
+  test("returns null when title matches the main page title (no paper)", async () => {
     const html = `
             <html>
             <head><title>lingbuzz - archive of linguistics articles</title></head>
             <body></body>
             </html>
         `;
-    const result = parsePaper(html, "009999");
+    const result = await parsePaper(html, "009999");
     expect(result).toBeNull();
   });
 
-  test("returns null when header information is missing", () => {
+  test("returns null when header information is missing", async () => {
     const html = `
             <html>
             <head><title>Some Paper</title></head>
@@ -64,11 +64,11 @@ describe("parsePaper", () => {
             </html>
         `;
     // parseCenterElement will return ["Only Title Here"], so authors (index 1) will be undefined.
-    const result = parsePaper(html, "001235");
+    const result = await parsePaper(html, "001235");
     expect(result).toBeNull();
   });
 
-  test("handles missing optional fields correctly", () => {
+  test("handles missing optional fields correctly", async () => {
     const html = `
             <html>
             <head><title>Title</title></head>
@@ -81,7 +81,7 @@ describe("parsePaper", () => {
             </body>
             </html>
         `;
-    const result = parsePaper(html, "001236");
+    const result = await parsePaper(html, "001236");
 
     expect(result).not.toBeNull();
     expect(result?.title).toBe("Minimal Paper");

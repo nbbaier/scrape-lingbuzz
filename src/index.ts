@@ -45,7 +45,7 @@ async function scrapePapers(ids: number[] = []) {
       const paperId = id.toString().padStart(PAPER_ID_LENGTH, "0");
       const html = await getPaperHtml(paperId);
 
-      const paper = parsePaper(html, paperId);
+      const paper = await parsePaper(html, paperId);
 
       if (paper) {
         papers.push(paper);

@@ -23,7 +23,17 @@ export async function withRetry<T>(
       lastError = error as Error;
 
       if (attempt < maxRetries) {
-        const delay = baseDelayMs * 2 ** attempt;
+        let delay = baseDelayMs * 2 ** attempt;
+
+        // Add jitter (±20%)
+        const jitter = delay * 0.2 * (Math.random() * 2 - 1);
+        delay = Math.max(0, Math.floor(delay + jitter));
+
+        // Respect Retry-After if present in the error
+        if (error && typeof error === "object" && "retryAfterMs" in error) {
+          delay = (error as { retryAfterMs: number }).retryAfterMs;
+        }
+
         logger.info(
           `Attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms...`
         );
@@ -51,6 +61,17 @@ export function fetchWithRetry(
   return withRetry(async () => {
     const response = await fetch(url, options);
     if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const error = new Error("HTTP 429: Too Many Requests");
+        if (retryAfter) {
+          const seconds = Number.parseInt(retryAfter, 10);
+          if (!Number.isNaN(seconds)) {
+            (error as any).retryAfterMs = seconds * 1000;
+          }
+        }
+        throw error;
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     return response;
