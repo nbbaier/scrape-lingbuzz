@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import { file, write } from "bun";
-import type { JSDOM } from "jsdom";
 import {
   BASE_URL,
   PAGINATION_FIRST_START,
@@ -33,7 +32,9 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
   const html = await res.text();
 
   // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
-  const match = html.match(/<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is);
+  const match = html.match(
+    /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is
+  );
 
   if (!match) {
     logger.error("Paper count element not found");

@@ -1,4 +1,8 @@
-import { MAX_RETRIES, RETRY_BASE_DELAY_MS } from "../constants";
+import {
+  FETCH_TIMEOUT_MS,
+  MAX_RETRIES,
+  RETRY_BASE_DELAY_MS,
+} from "../constants";
 import { logger } from "./logger";
 
 /**
@@ -46,13 +50,28 @@ export async function withRetry<T>(
 export function fetchWithRetry(
   url: string,
   options?: RequestInit,
-  maxRetries = MAX_RETRIES
+  maxRetries = MAX_RETRIES,
+  timeoutMs = FETCH_TIMEOUT_MS
 ): Promise<Response> {
   return withRetry(async () => {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const fetchOptions = {
+        ...options,
+        signal: options?.signal || controller.signal,
+      };
+
+      const response = await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    return response;
   }, maxRetries);
 }

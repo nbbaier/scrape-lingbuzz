@@ -169,7 +169,45 @@ describe("fetchWithRetry", () => {
     await fetchWithRetry("https://example.com", options, 1);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "https://example.com",
-      options
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: "test" }),
+      })
     );
+  });
+
+  test("aborts request and retries if it exceeds timeoutMs", async () => {
+    let attempts = 0;
+    const timeoutError = new Error("The operation was aborted");
+    timeoutError.name = "AbortError";
+    const successResponse = new Response("success", { status: 200 });
+
+    setFetchMock((_url, options) => {
+      attempts++;
+
+      if (attempts < 2) {
+        // First attempt, wait long enough for it to be aborted
+        return new Promise((_resolve, reject) => {
+          options?.signal?.addEventListener("abort", () =>
+            reject(timeoutError)
+          );
+          // Provide a fallback in case abort doesn't fire for some reason
+          setTimeout(() => reject(new Error("Timeout fallback")), 100);
+        });
+      }
+
+      return Promise.resolve(successResponse);
+    });
+
+    const result = await fetchWithRetry(
+      "https://example.com",
+      undefined,
+      1,
+      10 // very short timeout
+    );
+
+    expect(result).toBe(successResponse);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 });

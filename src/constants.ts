@@ -6,6 +6,7 @@ export const PAPERS_FILE_PATH = "./papers.json";
 export const CHUNK_SIZE = 5; // Number of concurrent requests
 export const MAX_RETRIES = 3; // Maximum retry attempts for failed requests
 export const RETRY_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
+export const FETCH_TIMEOUT_MS = 10_000; // Timeout for fetch requests in milliseconds
 
 // Pagination configuration (lingbuzz-specific)
 export const PAGINATION_FIRST_START = 1; // First page start value
