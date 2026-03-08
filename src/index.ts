@@ -1,5 +1,4 @@
-import { unlink } from "node:fs/promises";
-import { write } from "bun";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import {
   BATCH_SIZE,
   CHUNK_SIZE,
@@ -16,6 +15,7 @@ import {
   loadPapers,
   mapWithConcurrency,
   updatePapers,
+  writePapersFile,
 } from "./utils/utils";
 
 // Scraping statistics
@@ -35,17 +35,17 @@ const stats: ScrapeStats = {
   papersSkipped: 0,
 };
 
-const papers: Paper[] = [];
-const newIdsList = await newIds();
-
 /**
  * Scrapes papers from the lingbuzz website based on the provided IDs.
- * Scraped papers are added to the module-level `papers` array and then merged with existing data.
+ * Scraped papers are merged with existing data and persisted to papers.json.
  *
  * @param ids - An array of numbers representing the IDs of the papers to scrape. Defaults to an empty array.
+ * @param existingPapers - The existing papers already stored in papers.json.
  * @returns A Promise that resolves when scraping and saving is complete.
  */
-async function scrapePapers(ids: number[] = []) {
+async function scrapePapers(ids: number[] = [], existingPapers: Paper[] = []) {
+  const scrapedPapers: Paper[] = [];
+
   await mapWithConcurrency(ids, CHUNK_SIZE, async (id) => {
     stats.papersAttempted++;
     try {
@@ -55,7 +55,7 @@ async function scrapePapers(ids: number[] = []) {
       const paper = parsePaper(html, paperId);
 
       if (paper) {
-        papers.push(paper);
+        scrapedPapers.push(paper);
         stats.papersSucceeded++;
       } else {
         stats.papersSkipped++;
@@ -66,19 +66,8 @@ async function scrapePapers(ids: number[] = []) {
     }
   });
 
-  const currentPapers = await loadPapers();
-  const updatedPapersData = await updatePapers(papers, currentPapers);
-
-  await write(
-    "./papers.json",
-    JSON.stringify(
-      updatedPapersData.filter((item) => Object.keys(item).length !== 0)
-    )
-      // biome-ignore lint/suspicious/noControlCharactersInRegex: control characters sometimes appear in scraped HTML content; strip them to ensure the generated papers.json contains only valid JSON text
-      .replace(/[\u0000-\u001F\u007F-\u009F]/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-  );
+  const updatedPapersData = updatePapers(scrapedPapers, existingPapers);
+  await writePapersFile(updatedPapersData);
 }
 
 /**
@@ -106,15 +95,19 @@ function printStats() {
 
 async function loadIdCache(): Promise<number[]> {
   try {
-    const cacheFile = Bun.file(ID_CACHE_PATH);
-    return JSON.parse(await cacheFile.text());
+    const raw = await readFile(ID_CACHE_PATH, "utf8");
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((value) => Number.isInteger(value)) as number[];
   } catch {
     return [];
   }
 }
 
 async function saveIdCache(ids: number[]) {
-  await write(ID_CACHE_PATH, JSON.stringify(ids));
+  await writeFile(ID_CACHE_PATH, JSON.stringify(ids), "utf8");
 }
 
 async function removeIdCache() {
@@ -146,7 +139,7 @@ if (currentPapers.length === 0) {
   logger.info(
     `Scraping batch of ${batch.length} papers (${remaining.length} remaining)`
   );
-  await scrapePapers(batch);
+  await scrapePapers(batch, currentPapers);
 
   if (remaining.length > 0) {
     await saveIdCache(remaining);
@@ -157,11 +150,15 @@ if (currentPapers.length === 0) {
   }
 
   printStats();
-} else if (newIdsList.length > 0) {
-  logger.info(`Scraping ${newIdsList.length} new papers`);
-  await scrapePapers(newIdsList);
-  logger.info("Scraping complete");
-  printStats();
 } else {
-  logger.info("No new papers to scrape");
+  const newIdsList = await newIds(currentPapers);
+
+  if (newIdsList.length > 0) {
+    logger.info(`Scraping ${newIdsList.length} new papers`);
+    await scrapePapers(newIdsList, currentPapers);
+    logger.info("Scraping complete");
+    printStats();
+  } else {
+    logger.info("No new papers to scrape");
+  }
 }

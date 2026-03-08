@@ -60,4 +60,35 @@ describe("newIds", () => {
     fetchSpy.mockRestore();
     loadPapersSpy.mockRestore();
   });
+
+  test("uses provided existing papers without loading from disk", async () => {
+    const retryModule = await import("../utils/retry");
+    const fetchSpy = vi
+      .spyOn(retryModule, "fetchWithRetry")
+      .mockResolvedValue(new Response(mockHtml));
+
+    const utilsModule = await import("../utils/utils");
+    const loadPapersSpy = vi.spyOn(utilsModule, "loadPapers");
+
+    const ids = await newIds([
+      {
+        id: "123456",
+        title: "Existing",
+        authors: [],
+        date: "",
+        published_in: "",
+        keywords: [],
+        keywords_raw: "",
+        abstract: "",
+        link: "https://ling.auf.net/lingbuzz/123456",
+        downloads: 0,
+      },
+    ]);
+
+    expect(ids).toEqual([654_321]);
+    expect(loadPapersSpy).not.toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+    loadPapersSpy.mockRestore();
+  });
 });

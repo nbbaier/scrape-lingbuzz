@@ -54,21 +54,27 @@ export async function newestId(): Promise<number> {
 /**
  * Retrieves the new IDs from the front page and compares them with the IDs of the current papers.
  *
+ * @param existingPapers - Optional preloaded papers to avoid re-reading papers.json.
  * @returns A promise that resolves to an array of new IDs.
  */
-export async function newIds(): Promise<number[]> {
+export async function newIds(existingPapers?: Paper[]): Promise<number[]> {
   const hrefs = await getFrontPageIds();
 
-  let currentPapers: Paper[] = [];
+  let currentPapers = existingPapers ?? [];
 
-  try {
-    currentPapers = await loadPapers();
-    if (currentPapers.length === 0) {
-      logger.info("No papers found in papers.json");
+  if (!existingPapers) {
+    try {
+      currentPapers = await loadPapers();
+      if (currentPapers.length === 0) {
+        logger.info("No papers found in papers.json");
+        return [];
+      }
+    } catch (e) {
+      logger.error("Failed to load papers:", e);
       return [];
     }
-  } catch (e) {
-    logger.error("Failed to load papers:", e);
+  } else if (currentPapers.length === 0) {
+    logger.info("No papers found in papers.json");
     return [];
   }
 

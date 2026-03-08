@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { chunkArray, mapWithConcurrency } from "../utils/utils";
+import { chunkArray, mapWithConcurrency, sanitizePaper } from "../utils/utils";
 
 describe("chunkArray", () => {
   test("splits array into chunks of specified size", () => {
@@ -89,5 +89,27 @@ describe("mapWithConcurrency", () => {
       return Promise.resolve(x);
     });
     return expect(promise).rejects.toThrow("error");
+  });
+});
+
+describe("sanitizePaper", () => {
+  test("removes control characters from text fields", () => {
+    const result = sanitizePaper({
+      id: "000001",
+      title: "Title\u0000",
+      authors: ["John\u0007 Doe"],
+      date: "2026\u0008",
+      published_in: "Journal\u0001",
+      keywords: ["syntax\u0002"],
+      keywords_raw: "syntax\u0003",
+      abstract: "Some\u0004 abstract",
+      link: "https://ling.auf.net/lingbuzz/000001",
+      downloads: 1,
+    });
+
+    expect(result.title).toBe("Title");
+    expect(result.authors).toEqual(["John Doe"]);
+    expect(result.keywords).toEqual(["syntax"]);
+    expect(result.abstract).toBe("Some abstract");
   });
 });

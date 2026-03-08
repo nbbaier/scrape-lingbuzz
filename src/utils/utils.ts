@@ -1,4 +1,4 @@
-import { file, write } from "bun";
+import { access, readFile, rename, writeFile } from "node:fs/promises";
 import {
   BASE_URL,
   PAGINATION_FIRST_START,
@@ -6,7 +6,8 @@ import {
   PAGINATION_SECOND_START,
   PAPERS_FILE_PATH,
 } from "../constants";
-import type { Article, Author, Paper } from "../types";
+import { type Paper, PaperSchema } from "../schemas";
+import type { Article, Author } from "../types";
 import { logger } from "./logger";
 import { fetchWithRetry } from "./retry";
 
@@ -22,6 +23,30 @@ async function getJSDOM() {
 
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
+const PAPER_COUNT_ELEMENT_REGEX =
+  /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
+
+const sanitizeString = (value: string): string =>
+  Array.from(value)
+    .filter((char) => {
+      const charCode = char.charCodeAt(0);
+      return !(charCode <= 31 || (charCode >= 127 && charCode <= 159));
+    })
+    .join("")
+    .trim();
+
+export const sanitizePaper = (paper: Paper): Paper => ({
+  ...paper,
+  id: sanitizeString(paper.id),
+  title: sanitizeString(paper.title),
+  authors: paper.authors.map((author) => sanitizeString(author)),
+  date: sanitizeString(paper.date),
+  published_in: sanitizeString(paper.published_in),
+  keywords: paper.keywords.map((keyword) => sanitizeString(keyword)),
+  keywords_raw: sanitizeString(paper.keywords_raw),
+  abstract: sanitizeString(paper.abstract),
+  link: sanitizeString(paper.link),
+});
 
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
@@ -41,9 +66,7 @@ export async function getPaperCount(BASE_URL: string): Promise<number> {
   const html = await res.text();
 
   // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
-  const match = html.match(
-    /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is
-  );
+  const match = html.match(PAPER_COUNT_ELEMENT_REGEX);
 
   if (!match) {
     logger.error("Paper count element not found");
@@ -85,7 +108,7 @@ export async function generateUrls(
   return urls;
 }
 
-export async function getPageRows(url: string): Promise<any[]> {
+export async function getPageRows(url: string): Promise<Element[]> {
   const JSDOMClass = await getJSDOM();
   const res = await fetchWithRetry(url);
   const html = await res.text();
@@ -110,7 +133,7 @@ export async function getPageRows(url: string): Promise<any[]> {
   return Array.from(rows);
 }
 
-export const extractArticlesFromRow = (row: any): Article | null => {
+export const extractArticlesFromRow = (row: Element): Article | null => {
   const cells = row.querySelectorAll("td");
   if (cells.length < 4) {
     return null;
@@ -164,16 +187,54 @@ export async function loadPapers(
   papersFilePath = PAPERS_FILE_PATH
 ): Promise<Paper[]> {
   try {
-    const bunFile = file(papersFilePath);
-    if (!(await bunFile.exists())) {
+    try {
+      await access(papersFilePath);
+    } catch {
       logger.info(`Creating ${papersFilePath}`);
-      await write(papersFilePath, JSON.stringify([]));
+      await writeFile(papersFilePath, JSON.stringify([]), "utf8");
     }
-    return JSON.parse(await file(papersFilePath).text());
+
+    const parsed = JSON.parse(
+      await readFile(papersFilePath, "utf8")
+    ) as unknown;
+    if (!Array.isArray(parsed)) {
+      throw new Error("papers.json does not contain an array");
+    }
+
+    const validPapers: Paper[] = [];
+    let invalidCount = 0;
+
+    for (const item of parsed) {
+      const result = PaperSchema.safeParse(item);
+      if (result.success) {
+        validPapers.push(result.data);
+      } else {
+        invalidCount++;
+      }
+    }
+
+    if (invalidCount > 0) {
+      logger.warn(
+        `Skipped ${invalidCount} invalid paper records from ${papersFilePath}`
+      );
+    }
+
+    return validPapers;
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
   }
+}
+
+export async function writePapersFile(
+  papers: Paper[],
+  papersFilePath = PAPERS_FILE_PATH
+): Promise<void> {
+  const sanitizedPapers = papers.map((paper) => sanitizePaper(paper));
+  const tempPath = `${papersFilePath}.tmp`;
+
+  await writeFile(tempPath, JSON.stringify(sanitizedPapers), "utf8");
+  await rename(tempPath, papersFilePath);
 }
 
 /**
