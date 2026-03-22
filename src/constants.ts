@@ -19,4 +19,4 @@ export const PAPER_ID_START = 2; // First valid paper ID
 
 // Batched scraping configuration
 export const BATCH_SIZE = 500; // Number of papers per batch during initial scrape
-export const ID_CACHE_PATH = "./id-cache.json"; // Cache file for remaining paper IDs
+

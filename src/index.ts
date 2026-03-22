@@ -1,12 +1,5 @@
-import { readFile, unlink, writeFile } from "node:fs/promises";
-import {
-  BATCH_SIZE,
-  CHUNK_SIZE,
-  ID_CACHE_PATH,
-  PAPER_ID_LENGTH,
-  PAPER_ID_START,
-} from "./constants";
-import { newestId, newIds } from "./new-ids";
+import { CHUNK_SIZE, PAPER_ID_LENGTH } from "./constants";
+import { newIds } from "./new-ids";
 import { parsePaper } from "./parsing";
 import type { Paper } from "./schemas";
 import { logger } from "./utils/logger";
@@ -93,72 +86,14 @@ function printStats() {
   }
 }
 
-async function loadIdCache(): Promise<number[]> {
-  try {
-    const raw = await readFile(ID_CACHE_PATH, "utf8");
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((value) => Number.isInteger(value)) as number[];
-  } catch {
-    return [];
-  }
-}
-
-async function saveIdCache(ids: number[]) {
-  await writeFile(ID_CACHE_PATH, JSON.stringify(ids), "utf8");
-}
-
-async function removeIdCache() {
-  try {
-    await unlink(ID_CACHE_PATH);
-  } catch {
-    // file may not exist
-  }
-}
-
 const currentPapers = await loadPapers();
+const newIdsList = await newIds(currentPapers);
 
-if (currentPapers.length === 0) {
-  let cachedIds = await loadIdCache();
-
-  if (cachedIds.length === 0) {
-    const newestPaper = await newestId();
-    cachedIds = Array.from(
-      { length: newestPaper - 1 },
-      (_, i) => i + PAPER_ID_START
-    );
-    await saveIdCache(cachedIds);
-    logger.info(`Cached ${cachedIds.length} paper IDs for batched scraping`);
-  }
-
-  const batch = cachedIds.slice(0, BATCH_SIZE);
-  const remaining = cachedIds.slice(BATCH_SIZE);
-
-  logger.info(
-    `Scraping batch of ${batch.length} papers (${remaining.length} remaining)`
-  );
-  await scrapePapers(batch, currentPapers);
-
-  if (remaining.length > 0) {
-    await saveIdCache(remaining);
-    logger.info(`${remaining.length} papers remaining in cache for next run`);
-  } else {
-    await removeIdCache();
-    logger.info("Initial scraping backlog complete, cache cleared");
-  }
-
+if (newIdsList.length > 0) {
+  logger.info(`Scraping ${newIdsList.length} new papers`);
+  await scrapePapers(newIdsList, currentPapers);
+  logger.info("Scraping complete");
   printStats();
 } else {
-  const newIdsList = await newIds(currentPapers);
-
-  if (newIdsList.length > 0) {
-    logger.info(`Scraping ${newIdsList.length} new papers`);
-    await scrapePapers(newIdsList, currentPapers);
-    logger.info("Scraping complete");
-    printStats();
-  } else {
-    logger.info("No new papers to scrape");
-  }
+  logger.info("No new papers to scrape");
 }
