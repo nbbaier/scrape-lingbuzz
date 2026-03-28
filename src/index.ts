@@ -13,11 +13,11 @@ import {
 
 // Scraping statistics
 interface ScrapeStats {
-  startTime: number;
   papersAttempted: number;
-  papersSucceeded: number;
   papersFailed: number;
   papersSkipped: number;
+  papersSucceeded: number;
+  startTime: number;
 }
 
 const stats: ScrapeStats = {
