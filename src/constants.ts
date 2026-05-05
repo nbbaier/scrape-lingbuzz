@@ -19,3 +19,6 @@ export const PAPER_ID_START = 2; // First valid paper ID
 
 // Batched scraping configuration
 export const BATCH_SIZE = 500; // Number of papers per batch during initial scrape
+
+// Performance optimization
+export const CONTROL_CHARS_REGEX = /[\x00-\x1F\x7F-\x9F]/g;
