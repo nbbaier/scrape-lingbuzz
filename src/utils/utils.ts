@@ -250,6 +250,9 @@ export async function writePapersFile(
 
   await writeFile(tempPath, JSON.stringify(sanitizedPapers), "utf8");
   await rename(tempPath, papersFilePath);
+
+  cachedPapers = sanitizedPapers;
+  cachedPapersFilePath = papersFilePath;
 }
 
 /**
