@@ -24,8 +24,9 @@ export function parseCenterElement(document: Document): string[] {
         lines.push(currentLine.trim());
         currentLine = "";
       } else {
-        for (const child of Array.from(node.childNodes)) {
-          traverse(child);
+        const childNodes = node.childNodes;
+        for (let i = 0; i < childNodes.length; i++) {
+          traverse(childNodes[i]);
         }
       }
     }
