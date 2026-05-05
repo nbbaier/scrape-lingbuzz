@@ -18,22 +18,29 @@ async function getFrontPageIds(): Promise<number[]> {
   const document = new JSDOM(html).window.document;
 
   const tables = document.body.querySelectorAll("table");
-  const mainTable =
-    tables.length > 2 ? tables[2].querySelector("td > table") : null;
+
+  let mainTable: Element | null = null;
+  for (const table of tables) {
+    const nested = table.querySelector("td > table");
+    if (nested?.querySelector(`a[href*="/lingbuzz/"]`)) {
+      mainTable = nested;
+      break;
+    }
+  }
 
   if (!mainTable) {
     throw new Error("Failed to scrape front page: main table not found");
   }
 
-  const paperIds = new Set<number>();
+  const ids = new Set<number>();
   for (const a of mainTable.querySelectorAll("a")) {
-    const match = LINGBUZZ_ID_REGEX.exec((a as HTMLAnchorElement).href);
+    const match = LINGBUZZ_ID_REGEX.exec(a.href);
     if (match) {
-      paperIds.add(Number.parseInt(match[1], 10));
+      ids.add(Number.parseInt(match[1], 10));
     }
   }
 
-  return Array.from(paperIds);
+  return Array.from(ids);
 }
 
 /**
@@ -54,21 +61,27 @@ export async function newestId(): Promise<number> {
 /**
  * Retrieves the new IDs from the front page and compares them with the IDs of the current papers.
  *
+ * @param existingPapers - Optional preloaded papers to avoid re-reading papers.json.
  * @returns A promise that resolves to an array of new IDs.
  */
-export async function newIds(): Promise<number[]> {
+export async function newIds(existingPapers?: Paper[]): Promise<number[]> {
   const hrefs = await getFrontPageIds();
 
-  let currentPapers: Paper[] = [];
+  let currentPapers = existingPapers ?? [];
 
-  try {
-    currentPapers = await loadPapers();
-    if (currentPapers.length === 0) {
-      logger.info("No papers found in papers.json");
+  if (!existingPapers) {
+    try {
+      currentPapers = await loadPapers();
+      if (currentPapers.length === 0) {
+        logger.info("No papers found in papers.json");
+        return [];
+      }
+    } catch (e) {
+      logger.error("Failed to load papers:", e);
       return [];
     }
-  } catch (e) {
-    logger.error("Failed to load papers:", e);
+  } else if (currentPapers.length === 0) {
+    logger.info("No papers found in papers.json");
     return [];
   }
 

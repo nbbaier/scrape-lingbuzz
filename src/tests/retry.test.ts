@@ -169,7 +169,47 @@ describe("fetchWithRetry", () => {
     await fetchWithRetry("https://example.com", options, 1);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       "https://example.com",
-      options
+      expect.objectContaining({ method: "POST" })
     );
+  });
+
+  test("retries on HTTP 429 and respects Retry-After header", async () => {
+    let attempts = 0;
+    const successResponse = new Response("success", { status: 200 });
+    const rateLimitResponse = new Response("Too Many Requests", {
+      status: 429,
+      headers: { "Retry-After": "1" },
+    });
+
+    setFetchMock(() => {
+      attempts++;
+      if (attempts < 2) {
+        return Promise.resolve(rateLimitResponse);
+      }
+      return Promise.resolve(successResponse);
+    });
+
+    const result = await fetchWithRetry("https://example.com", undefined, 3);
+    expect(result.status).toBe(200);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("aborts fetch after timeout", { timeout: 15_000 }, async () => {
+    setFetchMock((_url, init) => {
+      return new Promise((_resolve, reject) => {
+        const signal = (init as RequestInit)?.signal;
+        if (signal) {
+          signal.addEventListener("abort", () => {
+            reject(
+              new DOMException("The operation was aborted.", "AbortError")
+            );
+          });
+        }
+      });
+    });
+
+    await expect(
+      fetchWithRetry("https://example.com", undefined, 0)
+    ).rejects.toThrow();
   });
 });

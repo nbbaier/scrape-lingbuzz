@@ -1,27 +1,27 @@
 export interface Paper {
-  id: string;
-  title: string;
+  abstract: string;
   authors: string[];
   date: string;
-  published_in: string;
+  downloads: number;
+  id: string;
   keywords: string[];
   keywords_raw: string;
-  abstract: string;
   link: string;
-  downloads: number;
+  published_in: string;
+  title: string;
 }
 
 export interface Author {
+  authorUrl: string;
   firstName: string;
   lastName: string;
-  authorUrl: string;
   username: string;
 }
 
 export interface Article {
-  id: string;
   authors: Record<number, Author>;
-  pdfLink: string | null;
+  id: string;
   paperURL: string;
+  pdfLink: string | null;
   title: string;
 }
