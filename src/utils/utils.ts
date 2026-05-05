@@ -164,7 +164,7 @@ export async function loadPapers(
     cachedPapers !== null &&
     cachedPapersFilePath === papersFilePath
   ) {
-    return cachedPapers;
+    return [...cachedPapers];
   }
 
   try {
