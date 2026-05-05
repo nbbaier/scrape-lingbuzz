@@ -19,8 +19,8 @@ export function splitKeywords(inputString: string): string[] {
   const parts = trimmedInput.split(KEYWORDS_REGEXP);
   const result: string[] = [];
 
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i].trim();
+  for (const rawPart of parts) {
+    const part = rawPart.trim();
     if (part) {
       result.push(part);
     }
