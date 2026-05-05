@@ -194,7 +194,7 @@ describe("fetchWithRetry", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
-  test("aborts fetch after timeout", { timeout: 15_000 }, async () => {
+  test("aborts fetch after timeout", async () => {
     setFetchMock((_url, init) => {
       return new Promise((_resolve, reject) => {
         const signal = (init as RequestInit)?.signal;
@@ -211,5 +211,5 @@ describe("fetchWithRetry", () => {
     await expect(
       fetchWithRetry("https://example.com", undefined, 0)
     ).rejects.toThrow();
-  });
+  }, 15000);
 });

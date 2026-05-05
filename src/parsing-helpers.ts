@@ -53,9 +53,13 @@ export function parseTable(document: Document): Map<string, string> {
 
   const tableDataMap = new Map<string, string>();
   for (const row of table.querySelectorAll("tr")) {
-    const cells = Array.from(row.querySelectorAll("td"))
-      .map((td) => td.textContent?.trim())
-      .filter(Boolean); // This removes any falsy values, including empty strings
+    const cells: string[] = [];
+    for (const td of row.querySelectorAll("td")) {
+      const text = td.textContent?.trim();
+      if (text) {
+        cells.push(text);
+      }
+    }
 
     if (cells.length >= 2) {
       const key = (cells[0] ?? "").replace(":", "").trim();
