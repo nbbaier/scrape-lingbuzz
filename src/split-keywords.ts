@@ -8,17 +8,23 @@
  * @param {string} inputString - The string of keywords to be split.
  * @returns {string[]} An array of individual keywords.
  */
-const SPLIT_REGEX = /,(?![^{[(<]*[\])}>])/;
-const RESPLIT_REGEX = / ·|-|–||\/ /;
+const KEYWORDS_REGEXP = /,(?![^{[(<]*[\])}>])| ·|-|–||\/ /;
 
 export function splitKeywords(inputString: string): string[] {
-  if (!inputString.trim()) {
+  const trimmedInput = inputString.trim();
+  if (!trimmedInput) {
     return [];
   }
 
-  return inputString
-    .split(SPLIT_REGEX)
-    .flatMap((s) => s.split(RESPLIT_REGEX))
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const parts = trimmedInput.split(KEYWORDS_REGEXP);
+  const result: string[] = [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim();
+    if (part) {
+      result.push(part);
+    }
+  }
+
+  return result;
 }
