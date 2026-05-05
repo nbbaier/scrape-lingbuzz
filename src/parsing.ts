@@ -1,4 +1,5 @@
 import { JSDOM } from "jsdom";
+import { createControlCharsRegex } from "./constants";
 import {
   parseAbstract,
   parseCenterElement,
@@ -14,12 +15,7 @@ const DOWNLOAD_COUNT_REGEX = /\d+/;
 const FORMAT_PREFIX_REGEX = /^Format:/;
 
 const stripControlChars = (value: string): string =>
-  Array.from(value)
-    .filter((char) => {
-      const code = char.charCodeAt(0);
-      return !(code <= 31 || (code >= 127 && code <= 159));
-    })
-    .join("");
+  value.replace(createControlCharsRegex(), "");
 
 const normalizeText = (value: string): string =>
   stripControlChars(value)

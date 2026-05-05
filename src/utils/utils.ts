@@ -1,6 +1,7 @@
 import { access, readFile, rename, writeFile } from "node:fs/promises";
 import {
   BASE_URL,
+  createControlCharsRegex,
   PAGINATION_FIRST_START,
   PAGINATION_INCREMENT,
   PAGINATION_SECOND_START,
@@ -27,13 +28,7 @@ const PAPER_COUNT_ELEMENT_REGEX =
   /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
 
 const sanitizeString = (value: string): string =>
-  Array.from(value)
-    .filter((char) => {
-      const charCode = char.charCodeAt(0);
-      return !(charCode <= 31 || (charCode >= 127 && charCode <= 159));
-    })
-    .join("")
-    .trim();
+  value.replace(createControlCharsRegex(), "").trim();
 
 export const sanitizePaper = (paper: Paper): Paper => ({
   ...paper,
