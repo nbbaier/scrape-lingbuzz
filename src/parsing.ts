@@ -13,6 +13,7 @@ let cachedDOMParser: InstanceType<typeof JSDOM>["window"]["DOMParser"] | null =
 
 function getDOMParser() {
   if (!cachedDOMParser) {
+    // Keep one empty JSDOM window alive so its DOMParser constructor stays valid.
     const window = new JSDOM().window;
     cachedDOMParser = window.DOMParser;
   }
