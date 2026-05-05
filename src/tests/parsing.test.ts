@@ -88,7 +88,7 @@ describe("parsePaper", () => {
     expect(result?.authors).toEqual(["Author Name"]);
     expect(result?.date).toBe(""); // Fallback
     expect(result?.published_in).toBe(""); // Fallback
-    expect(result?.keywords).toEqual([""]); // Fallback from splitKeywords("") -> [""]? Let's check logic.
+    expect(result?.keywords).toEqual([]);
     expect(result?.downloads).toBe(0); // Fallback
   });
 });

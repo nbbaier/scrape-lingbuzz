@@ -3,7 +3,8 @@ export const BASE_URL = "https://ling.auf.net/";
 export const PAPERS_FILE_PATH = "./papers.json";
 
 // Scraping configuration
-export const CHUNK_SIZE = 5; // Number of concurrent requests
+export const CHUNK_SIZE = 10; // Number of concurrent requests
+export const FETCH_TIMEOUT_MS = 10_000; // Timeout for individual fetch requests (10s)
 export const MAX_RETRIES = 3; // Maximum retry attempts for failed requests
 export const RETRY_BASE_DELAY_MS = 1000; // Base delay for exponential backoff
 
@@ -15,3 +16,6 @@ export const PAGINATION_INCREMENT = 100; // Increment for subsequent pages
 // Paper ID configuration
 export const PAPER_ID_LENGTH = 6; // Length of zero-padded paper IDs
 export const PAPER_ID_START = 2; // First valid paper ID
+
+// Batched scraping configuration
+export const BATCH_SIZE = 500; // Number of papers per batch during initial scrape
