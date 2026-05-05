@@ -173,16 +173,29 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   };
 };
 
+let cachedPapers: Paper[] | null = null;
+let cachedPapersFilePath: string | null = null;
+
 /**
  * Loads previously scraped papers data from a JSON file.
  *
  * @param papersFilePath - The path to the papers JSON file. Defaults to PAPERS_FILE_PATH.
+ * @param forceReload - Whether to bypass the cache and reload the file. Defaults to false.
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
 export async function loadPapers(
-  papersFilePath = PAPERS_FILE_PATH
+  papersFilePath = PAPERS_FILE_PATH,
+  forceReload = false
 ): Promise<Paper[]> {
+  if (
+    !forceReload &&
+    cachedPapers !== null &&
+    cachedPapersFilePath === papersFilePath
+  ) {
+    return [...cachedPapers];
+  }
+
   try {
     try {
       await access(papersFilePath);
@@ -216,7 +229,9 @@ export async function loadPapers(
       );
     }
 
-    return validPapers;
+    cachedPapers = validPapers;
+    cachedPapersFilePath = papersFilePath;
+    return [...cachedPapers];
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
@@ -232,6 +247,9 @@ export async function writePapersFile(
 
   await writeFile(tempPath, JSON.stringify(sanitizedPapers), "utf8");
   await rename(tempPath, papersFilePath);
+
+  cachedPapers = sanitizedPapers;
+  cachedPapersFilePath = papersFilePath;
 }
 
 /**
