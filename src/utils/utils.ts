@@ -27,13 +27,7 @@ const PAPER_COUNT_ELEMENT_REGEX =
   /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
 
 const sanitizeString = (value: string): string =>
-  Array.from(value)
-    .filter((char) => {
-      const charCode = char.charCodeAt(0);
-      return !(charCode <= 31 || (charCode >= 127 && charCode <= 159));
-    })
-    .join("")
-    .trim();
+  value.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
 
 export const sanitizePaper = (paper: Paper): Paper => ({
   ...paper,
