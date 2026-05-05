@@ -1,7 +1,7 @@
 import { access, readFile, rename, writeFile } from "node:fs/promises";
 import {
   BASE_URL,
-  CONTROL_CHARS_REGEX,
+  createControlCharsRegex,
   PAGINATION_FIRST_START,
   PAGINATION_INCREMENT,
   PAGINATION_SECOND_START,
@@ -28,7 +28,7 @@ const PAPER_COUNT_ELEMENT_REGEX =
   /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
 
 const sanitizeString = (value: string): string =>
-  value.replace(CONTROL_CHARS_REGEX, "").trim();
+  value.replace(createControlCharsRegex(), "").trim();
 
 export const sanitizePaper = (paper: Paper): Paper => ({
   ...paper,

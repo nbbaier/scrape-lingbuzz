@@ -4,7 +4,7 @@ export const PAPERS_FILE_PATH = "./papers.json";
 
 // Regex
 // biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally used for stripping control characters
-export const CONTROL_CHARS_REGEX = /[\x00-\x1F\x7F-\x9F]/g;
+export const createControlCharsRegex = (): RegExp => /[\x00-\x1F\x7F-\x9F]/g;
 
 // Scraping configuration
 export const CHUNK_SIZE = 10; // Number of concurrent requests
