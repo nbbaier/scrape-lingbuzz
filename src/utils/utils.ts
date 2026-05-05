@@ -144,7 +144,7 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   const titleCell = cells[3];
   const authorsArray = Array.from(authorCell.querySelectorAll("a")).entries();
   const authors: Author[] = [];
-  const authorsMap = new Map<number, Author>();
+  const authorsRecord: Record<number, Author> = {};
 
   for (const [index, a] of authorsArray) {
     const author: Author = {
@@ -155,7 +155,7 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
     };
 
     authors.push(author);
-    authorsMap.set(index + 1, author);
+    authorsRecord[index + 1] = author;
   }
 
   const pdfLink = pdfCell.querySelector("a")?.href
@@ -169,7 +169,7 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
 
   return {
     id,
-    authors: Object.fromEntries(authorsMap),
+    authors: authorsRecord,
     pdfLink,
     paperURL,
     title,
