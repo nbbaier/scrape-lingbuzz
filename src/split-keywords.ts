@@ -11,12 +11,11 @@
 const KEYWORDS_REGEXP = /,(?![^{[(<]*[\])}>])| ·|-|–||\/ /;
 
 export function splitKeywords(inputString: string): string[] {
-  const trimmedInput = inputString.trim();
-  if (!trimmedInput) {
+  if (!inputString.trim()) {
     return [];
   }
 
-  const parts = trimmedInput.split(KEYWORDS_REGEXP);
+  const parts = inputString.split(KEYWORDS_REGEXP);
   const result: string[] = [];
 
   for (const rawPart of parts) {

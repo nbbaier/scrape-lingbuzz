@@ -19,8 +19,8 @@ function optimized(inputString: string): string[] {
   }
   const parts = inputString.split(COMBINED_REGEX);
   const result: string[] = [];
-  for (let i = 0; i < parts.length; i++) {
-    const trimmed = parts[i].trim();
+  for (const part of parts) {
+    const trimmed = part.trim();
     if (trimmed) {
       result.push(trimmed);
     }
@@ -41,15 +41,22 @@ const inputs = [
   "syntax,, semantics, ",
   "A single keyword",
   "",
-  "syntax, (foo-bar), semantics"
+  "syntax, (foo-bar), semantics",
 ];
 
 const largeInputs: string[] = [];
-for (let i = 0; i < 10000; i++) {
-  largeInputs.push(...inputs);
+for (let i = 0; i < 10_000; i++) {
+  for (const input of inputs) {
+    largeInputs.push(input);
+  }
 }
 
 const iterations = 100;
+
+for (const input of largeInputs) {
+  original(input);
+  optimized(input);
+}
 
 console.time("Original");
 for (let i = 0; i < iterations; i++) {
