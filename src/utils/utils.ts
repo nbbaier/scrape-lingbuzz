@@ -15,7 +15,7 @@ import { fetchWithRetry } from "./retry";
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
 
-let jsdomCache: any = null;
+let jsdomCache: typeof JSDOM | null = null;
 
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
