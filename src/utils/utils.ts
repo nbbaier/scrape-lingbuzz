@@ -142,9 +142,11 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   const authorsMap = new Map<number, Author>();
 
   for (const [index, a] of authorsArray) {
+    const text = a.textContent?.trim() || "";
+    const parts = text.split(" ");
     const author: Author = {
-      firstName: a.textContent?.trim().split(" ")[0] || "",
-      lastName: a.textContent?.trim().split(" ")[1] || "",
+      firstName: parts[0] || "",
+      lastName: parts[1] || "",
       authorUrl: a.href || "",
       username: decodeURI(a.href).match(PERSON_USERNAME_REGEX)?.[1] || "",
     };
