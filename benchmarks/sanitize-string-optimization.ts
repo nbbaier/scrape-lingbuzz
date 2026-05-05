@@ -44,13 +44,19 @@ runBenchmark("Optimized", sanitizeStringOptimized, veryLongString);
 
 // Verification
 const testStrings = [shortString, longString, veryLongString, "  \x00  ", "no changes"];
+let mismatch = false;
 for (const s of testStrings) {
     const res1 = sanitizeStringOriginal(s);
     const res2 = sanitizeStringOptimized(s);
     if (res1 !== res2) {
+        mismatch = true;
         console.error(`Mismatch for string: ${JSON.stringify(s)}`);
         console.error(`Original:  ${JSON.stringify(res1)}`);
         console.error(`Optimized: ${JSON.stringify(res2)}`);
     }
+}
+if (mismatch) {
+    console.error("\nVerification FAILED - results differ.");
+    process.exit(1);
 }
 console.log("\nVerification complete - all results match.");
