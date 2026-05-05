@@ -258,9 +258,15 @@ export function updatePapers(
       merged.set(paper.id, paper);
     }
   }
-  return Array.from(merged.values()).sort(
-    (a, b) => Number.parseInt(a.id, 10) - Number.parseInt(b.id, 10)
-  );
+  const values = Array.from(merged.values());
+  const withIds = values.map((paper) => ({
+    paper,
+    numericId: Number.parseInt(paper.id, 10),
+  }));
+
+  withIds.sort((a, b) => a.numericId - b.numericId);
+
+  return withIds.map((item) => item.paper);
 }
 
 /**
