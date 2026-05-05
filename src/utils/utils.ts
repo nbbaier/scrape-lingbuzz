@@ -175,7 +175,7 @@ export async function loadPapers(
     const papersFile = file(papersFilePath);
     cachedPapers = JSON.parse(await papersFile.text());
     cachedPapersFilePath = papersFilePath;
-    return cachedPapers as Paper[];
+    return [...cachedPapers] as Paper[];
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
