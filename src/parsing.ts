@@ -12,14 +12,10 @@ const QUOTE_REGEX = /"/g;
 const WHITESPACE_REGEX = /\s+/g;
 const DOWNLOAD_COUNT_REGEX = /\d+/;
 const FORMAT_PREFIX_REGEX = /^Format:/;
+const CONTROL_CHARS_REGEX = /[\x00-\x1F\x7F-\x9F]/g;
 
 const stripControlChars = (value: string): string =>
-  Array.from(value)
-    .filter((char) => {
-      const code = char.charCodeAt(0);
-      return !(code <= 31 || (code >= 127 && code <= 159));
-    })
-    .join("");
+  value.replace(CONTROL_CHARS_REGEX, "");
 
 const normalizeText = (value: string): string =>
   stripControlChars(value)
