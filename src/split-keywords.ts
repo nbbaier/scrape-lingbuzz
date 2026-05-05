@@ -12,8 +12,13 @@ const SPLIT_REGEX = /,(?![^{[(<]*[\])}>])/;
 const RESPLIT_REGEX = / ·|-|–||\/ /;
 
 export function splitKeywords(inputString: string): string[] {
+  if (!inputString.trim()) {
+    return [];
+  }
+
   return inputString
     .split(SPLIT_REGEX)
     .flatMap((s) => s.split(RESPLIT_REGEX))
-    .map((s) => s.trim());
+    .map((s) => s.trim())
+    .filter(Boolean);
 }

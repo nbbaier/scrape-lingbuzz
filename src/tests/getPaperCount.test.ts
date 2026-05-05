@@ -1,4 +1,4 @@
-import { describe, expect, test, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { getPaperCount } from "../utils/utils";
 
 describe("getPaperCount", () => {
@@ -23,7 +23,7 @@ describe("getPaperCount", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       text: () => Promise.resolve(html),
-    } as any);
+    } as any) as unknown as typeof fetch;
 
     const count = await getPaperCount("http://fakeurl.com");
     expect(count).toBe(8234);
@@ -40,7 +40,7 @@ describe("getPaperCount", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       text: () => Promise.resolve(html),
-    } as any);
+    } as any) as unknown as typeof fetch;
 
     const count = await getPaperCount("http://fakeurl.com");
     expect(count).toBe(500);
@@ -53,7 +53,7 @@ describe("getPaperCount", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       text: () => Promise.resolve(html),
-    } as any);
+    } as any) as unknown as typeof fetch;
 
     const count = await getPaperCount("http://fakeurl.com");
     expect(count).toBe(9999);
@@ -66,7 +66,7 @@ describe("getPaperCount", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       text: () => Promise.resolve(html),
-    } as any);
+    } as any) as unknown as typeof fetch;
 
     const count = await getPaperCount("http://fakeurl.com");
     expect(count).toBe(7777);
@@ -86,7 +86,7 @@ describe("getPaperCount", () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       text: () => Promise.resolve(html),
-    } as any);
+    } as any) as unknown as typeof fetch;
 
     const count = await getPaperCount("http://fakeurl.com");
     expect(count).toBe(9000);

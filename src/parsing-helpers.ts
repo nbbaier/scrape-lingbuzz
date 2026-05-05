@@ -10,17 +10,33 @@ export function parseCenterElement(document: Document): string[] {
     return [];
   }
 
-  const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
+  const lines: string[] = [];
+  let currentLine = "";
 
-  const tempDiv = document.createElement("div");
-  const lines = linesWithHtml
-    .map((line) => {
-      tempDiv.innerHTML = line;
-      return tempDiv.textContent?.trim() || "";
-    })
-    .filter(Boolean); // Filter out any empty strings
+  const traverse = (node: Node) => {
+    if (node.nodeType === 3) {
+      // Text node
+      currentLine += node.textContent || "";
+    } else if (node.nodeType === 1) {
+      // Element node
+      const element = node as Element;
+      if (element.tagName.toLowerCase() === "br") {
+        lines.push(currentLine.trim());
+        currentLine = "";
+      } else {
+        for (const child of Array.from(node.childNodes)) {
+          traverse(child);
+        }
+      }
+    }
+  };
 
-  return lines;
+  traverse(centerElement);
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
+  }
+
+  return lines.filter(Boolean);
 }
 
 /**

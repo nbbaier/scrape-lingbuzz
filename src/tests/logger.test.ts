@@ -14,8 +14,8 @@ describe("logger", () => {
     originalError = console.error;
     mockLog = vi.fn();
     mockError = vi.fn();
-    console.log = mockLog;
-    console.error = mockError;
+    console.log = mockLog as unknown as typeof console.log;
+    console.error = mockError as unknown as typeof console.error;
   });
 
   afterEach(() => {
