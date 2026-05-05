@@ -9,6 +9,18 @@ import { type Paper, PaperSchema } from "./schemas";
 import { splitKeywords } from "./split-keywords";
 import { logger } from "./utils/logger";
 
+let cachedDOMParser: InstanceType<typeof JSDOM>["window"]["DOMParser"] | null =
+  null;
+
+function getDOMParser() {
+  if (!cachedDOMParser) {
+    // Keep one empty JSDOM window alive so its DOMParser constructor stays valid.
+    const window = new JSDOM().window;
+    cachedDOMParser = window.DOMParser;
+  }
+  return cachedDOMParser;
+}
+
 const QUOTE_REGEX = /"/g;
 const WHITESPACE_REGEX = /\s+/g;
 const DOWNLOAD_COUNT_REGEX = /\d+/;
@@ -97,7 +109,8 @@ const extractRawAbstract = (document: Document): string => {
 };
 
 export function parsePaper(html: string, paperId: string): Paper | null {
-  const document = new JSDOM(html).window.document;
+  const DOMParser = getDOMParser();
+  const document = new DOMParser().parseFromString(html, "text/html");
   const pageTitle = document.querySelector("title")?.textContent;
 
   if (pageTitle === "lingbuzz - archive of linguistics articles") {
