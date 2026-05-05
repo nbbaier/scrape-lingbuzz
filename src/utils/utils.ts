@@ -25,15 +25,10 @@ const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
 const PAPER_COUNT_ELEMENT_REGEX =
   /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
+const CONTROL_CHARS_REGEX = /[\x00-\x1F\x7F-\x9F]/g;
 
 const sanitizeString = (value: string): string =>
-  Array.from(value)
-    .filter((char) => {
-      const charCode = char.charCodeAt(0);
-      return !(charCode <= 31 || (charCode >= 127 && charCode <= 159));
-    })
-    .join("")
-    .trim();
+  value.replace(CONTROL_CHARS_REGEX, "").trim();
 
 export const sanitizePaper = (paper: Paper): Paper => ({
   ...paper,
