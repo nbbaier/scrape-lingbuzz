@@ -211,5 +211,5 @@ describe("fetchWithRetry", () => {
     await expect(
       fetchWithRetry("https://example.com", undefined, 0)
     ).rejects.toThrow();
-  }, 15000);
+  }, 15_000);
 });

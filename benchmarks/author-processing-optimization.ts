@@ -1,9 +1,9 @@
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 
 interface Author {
+  authorUrl: string;
   firstName: string;
   lastName: string;
-  authorUrl: string;
   username: string;
 }
 
@@ -40,15 +40,20 @@ function optimizedLogic(authorsArray: [number, any][]) {
 const numAuthors = 100;
 const authorsArray: [number, any][] = [];
 for (let i = 0; i < numAuthors; i++) {
-  authorsArray.push([i, {
+  authorsArray.push([
+    i,
+    {
       textContent: "John Doe",
-      href: "https://ling.auf.net/lingbuzz/_person/jdoe"
-  }]);
+      href: "https://ling.auf.net/lingbuzz/_person/jdoe",
+    },
+  ]);
 }
 
-const iterations = 10000;
+const iterations = 10_000;
 
-console.log(`Running benchmark with ${numAuthors} authors and ${iterations} iterations...`);
+console.log(
+  `Running benchmark with ${numAuthors} authors and ${iterations} iterations...`
+);
 
 console.time("Original");
 for (let i = 0; i < iterations; i++) {

@@ -2,39 +2,37 @@ name: Scrape lingbuzz
 run-name: Scraping
 
 on:
-  schedule:
-    - cron: "0 */8 * * *"
-  workflow_dispatch: # adding the workflow_dispatch so it can be triggered manually
+   schedule:
+      - cron: "0 */8 * * *"
+   workflow_dispatch: # adding the workflow_dispatch so it can be triggered manually
 
 jobs:
-  scraper:
-    runs-on: ubuntu-latest
-    permissions: # Job-level permissions configuration starts here
-      contents: write # 'write' access to repository contents
-      pull-requests: write # 'write' access to pull requests
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-      - name: Set up bun
-        uses: oven-sh/setup-bun@v2
-      - name: Cache Bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-      - name: Install depependencies
-        run: bun install
-      - name: Fetch the data
-        run: bun run src/index.ts
-      - name: format json
-        run: jq '.' papers.json > temp.json && mv -f temp.json papers.json
-      - name: Commit and push if it changed
-        run: |-
-          git config user.name "Automated"
-          git config user.email "actions@users.noreply.github.com"
-          git add -A
-          timestamp=$(date -u)
-          git commit -m "Latest data: ${timestamp}" || exit 0
-          git push
+   scraper:
+      runs-on: ubuntu-latest
+      permissions: # Job-level permissions configuration starts here
+         contents: write # 'write' access to repository contents
+         pull-requests: write # 'write' access to pull requests
+      steps:
+         - name: Check out the repo
+           uses: actions/checkout@v4
+         - name: Set up bun
+           uses: oven-sh/setup-bun@v2
+         - name: Cache Bun dependencies
+           uses: actions/cache@v4
+           with:
+              path: ~/.bun/install/cache
+              key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+              restore-keys: |
+                 ${{ runner.os }}-bun-
+         - name: Install depependencies
+           run: bun install
+         - name: Fetch the data
+           run: bun run src/index.ts
+         - name: Commit and push if it changed
+           run: |-
+              git config user.name "Automated"
+              git config user.email "actions@users.noreply.github.com"
+              git add -A
+              timestamp=$(date -u)
+              git commit -m "Latest data: ${timestamp}" || exit 0
+              git push
