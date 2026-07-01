@@ -137,22 +137,22 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   const authorCell = cells[0];
   const pdfCell = cells[2];
   const titleCell = cells[3];
-  const authorsArray = Array.from(authorCell.querySelectorAll("a")).entries();
-  const authors: Author[] = [];
-  const authorsMap = new Map<number, Author>();
+  const authorLinks = authorCell.querySelectorAll("a");
+  const authors: Record<number, Author> = {};
 
-  for (const [index, a] of authorsArray) {
-    const text = a.textContent?.trim() || "";
+  let index = 1;
+  for (const a of authorLinks) {
+    const anchor = a as any;
+    const text = anchor.textContent?.trim() || "";
     const parts = text.split(" ");
     const author: Author = {
       firstName: parts[0] || "",
       lastName: parts[1] || "",
-      authorUrl: a.href || "",
-      username: decodeURI(a.href).match(PERSON_USERNAME_REGEX)?.[1] || "",
+      authorUrl: anchor.href || "",
+      username: decodeURI(anchor.href).match(PERSON_USERNAME_REGEX)?.[1] || "",
     };
 
-    authors.push(author);
-    authorsMap.set(index + 1, author);
+    authors[index++] = author;
   }
 
   const pdfLink = pdfCell.querySelector("a")?.href
@@ -166,7 +166,7 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
 
   return {
     id,
-    authors: Object.fromEntries(authorsMap),
+    authors,
     pdfLink,
     paperURL,
     title,
