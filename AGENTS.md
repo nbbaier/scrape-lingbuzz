@@ -136,8 +136,22 @@ The workflow (`.github/workflows/scrape.yml`):
 - **Formatter**: Biome with tabs, 90 character line width, double quotes
 - **Linting**: Biome recommended rules
 - Papers.json is excluded from Biome checks
-,cla
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in this repo's GitHub Issues (`nbbaier/scrape-lingbuzz`), using the `gh` CLI. External PRs are not treated as a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary — no repo-specific overrides. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+---
 
 # Ultracite Code Standards
 
