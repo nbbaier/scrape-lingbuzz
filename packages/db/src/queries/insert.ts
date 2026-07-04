@@ -51,7 +51,6 @@ export interface InsertOptions<
   TTable extends DatabaseTable,
   TReturning = undefined,
 > {
-  returning?: TReturning;
   onConflictDo?: { target: IndexColumn | IndexColumn[] };
   onConflictDoUpdate?: {
     target: IndexColumn | IndexColumn[];
@@ -59,6 +58,7 @@ export interface InsertOptions<
     setWhere?: SQL;
     set: SQLiteUpdateSetSource<TTable>;
   };
+  returning?: TReturning;
 }
 
 type InsertIntoTableReturnType<T, TableSelect> =

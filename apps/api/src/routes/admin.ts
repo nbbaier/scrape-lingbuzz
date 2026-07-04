@@ -6,9 +6,9 @@ import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 
 interface Bindings {
+  ADMIN_TOKEN: string;
   AI: Ai;
   VECTORIZE: VectorizeIndex;
-  ADMIN_TOKEN: string;
 }
 
 const BATCH_SIZE = 100;

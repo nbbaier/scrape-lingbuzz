@@ -1,36 +1,36 @@
 export type PaperStatus = "new" | "freshly changed" | string;
 
 export interface ListingAuthor {
+  authorUrl: string;
   firstName: string;
   lastName: string;
-  authorUrl: string;
   username: string;
 }
 
 export interface EnrichedAuthor extends ListingAuthor {
-  email: string;
   affiliation: string;
+  email: string;
   website: string;
 }
 
 export interface ListingRow {
-  paperId: string;
-  title: string;
-  status: PaperStatus;
   authors: Map<number, ListingAuthor>;
   downloadUrl: string;
+  paperId: string;
   paperUrl: string;
+  status: PaperStatus;
+  title: string;
 }
 
 export interface ParsedPaper {
-  lingbuzzId: string;
-  title: string;
-  date: string;
-  publishedIn: string;
-  keywordsRaw: string;
-  keywords: string[];
   abstract: string;
+  date: string;
   downloads: number;
   downloadUrl: string;
+  keywords: string[];
+  keywordsRaw: string;
+  lingbuzzId: string;
   paperUrl: string;
+  publishedIn: string;
+  title: string;
 }

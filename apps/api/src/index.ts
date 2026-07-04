@@ -6,11 +6,11 @@ import search from "./routes/search";
 import semantic from "./routes/semantic";
 
 interface Bindings {
-  TURSO_DATABASE_URL: string;
-  TURSO_AUTH_TOKEN: string;
-  AI: Ai;
-  VECTORIZE: VectorizeIndex;
   ADMIN_TOKEN: string;
+  AI: Ai;
+  TURSO_AUTH_TOKEN: string;
+  TURSO_DATABASE_URL: string;
+  VECTORIZE: VectorizeIndex;
 }
 
 const app = new Hono<{ Bindings: Bindings }>();

@@ -23,18 +23,18 @@ interface BaseTriggerData<
   TType extends TriggerType,
   TTable extends SQLiteTable,
 > {
-  /** Trigger name */
-  name: string;
-  /** On which operations should trigger activate */
-  type: TType;
-  /** When the trigger should activate (BEFORE, AFTER, or INSTEAD OF) */
-  timing?: TriggerTiming;
-  /** On which tables should trigger activate */
-  on: TTable;
-  /** Condition when trigger should activate */
-  when?: (row: TriggerRow<TType, TTable>) => SQLWrapper;
   /** What operation to perform when trigger activates */
   do: (row: TriggerRow<TType, TTable>) => SQLWrapper;
+  /** Trigger name */
+  name: string;
+  /** On which tables should trigger activate */
+  on: TTable;
+  /** When the trigger should activate (BEFORE, AFTER, or INSTEAD OF) */
+  timing?: TriggerTiming;
+  /** On which operations should trigger activate */
+  type: TType;
+  /** Condition when trigger should activate */
+  when?: (row: TriggerRow<TType, TTable>) => SQLWrapper;
 }
 
 interface UpdateTriggerData<TTable extends SQLiteTable>

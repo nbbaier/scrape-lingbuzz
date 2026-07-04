@@ -51,12 +51,12 @@ const FTS_REBUILD_INSERT_SQL = sql`
 `;
 
 interface RawSearchResultRow {
-  paper_id: number;
-  lingbuzz_id: string;
-  title: string;
   abstract: string | null;
-  snippet: string;
+  lingbuzz_id: string;
+  paper_id: number;
   rank: number;
+  snippet: string;
+  title: string;
 }
 
 interface RawSearchCountRow {
@@ -66,19 +66,19 @@ interface RawSearchCountRow {
 export type SearchField = "all" | "title" | "abstract" | "keywords" | "authors";
 
 export interface SearchResult {
-  paperId: number;
-  lingbuzzId: string;
-  title: string;
   abstract: string | null;
-  snippet: string;
+  lingbuzzId: string;
+  paperId: number;
   rank: number;
+  snippet: string;
+  title: string;
 }
 
 export interface SearchOptions {
-  query: string;
+  field?: SearchField;
   limit?: number;
   offset?: number;
-  field?: SearchField;
+  query: string;
 }
 
 export class SearchSyntaxError extends Error {

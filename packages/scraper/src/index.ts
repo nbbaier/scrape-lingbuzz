@@ -8,12 +8,12 @@ import { logger } from "./utils/logger";
 import { fetchWithRetry } from "./utils/retry";
 
 interface ScrapeStats {
-  startTime: number;
-  pagesProcessed: number;
-  fullScrapes: number;
-  versionUpdates: number;
-  skipped: number;
   failed: number;
+  fullScrapes: number;
+  pagesProcessed: number;
+  skipped: number;
+  startTime: number;
+  versionUpdates: number;
 }
 
 const stats: ScrapeStats = {
