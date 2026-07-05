@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { logger } from "../utils/logger";
 
@@ -6,14 +7,14 @@ const ISO_TIMESTAMP_REGEX = /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]/;
 describe("logger", () => {
   let originalLog: typeof console.log;
   let originalError: typeof console.error;
-  let mockLog: ReturnType<typeof vi.fn>;
-  let mockError: ReturnType<typeof vi.fn>;
+  let mockLog: Mock<typeof console.log>;
+  let mockError: Mock<typeof console.error>;
 
   beforeEach(() => {
     originalLog = console.log;
     originalError = console.error;
-    mockLog = vi.fn();
-    mockError = vi.fn();
+    mockLog = vi.fn<typeof console.log>();
+    mockError = vi.fn<typeof console.error>();
     console.log = mockLog;
     console.error = mockError;
   });
