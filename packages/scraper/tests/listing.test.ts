@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
-import { describe, expect, test } from "vitest";
-import { parseListingRow } from "../src/listing";
+import { describe, expect, test, vi } from "vitest";
+import { fetchListingPage, parseListingRow } from "../src/listing";
 
 function createRow(html: string): HTMLTableRowElement {
   const dom = new JSDOM(`<table><tbody><tr>${html}</tr></tbody></table>`);
@@ -105,5 +105,56 @@ describe("parseListingRow", () => {
     const result = parseListingRow(row);
     expect(result).not.toBeNull();
     expect(result?.downloadUrl).toBe("");
+  });
+});
+
+describe("fetchListingPage", () => {
+  test("parses rows when an intermittent banner table precedes the content table", async () => {
+    const mockHtml = `
+      <html>
+      <body>
+        <table><tr><td>announcement</td></tr></table>
+        <table></table>
+        <table></table>
+        <table>
+          <tr>
+            <td>
+              <table>
+                <tr>
+                  <td><a href="/_person/jdoe">Doe, John</a></td>
+                  <td>new</td>
+                  <td><a href="/lingbuzz/007001/current.pdf?_s=abc">pdf</a></td>
+                  <td><a href="/lingbuzz/007001">A New Paper</a></td>
+                </tr>
+                <tr>
+                  <td><a href="/_person/asmith">Smith, Alice</a></td>
+                  <td>2026-01</td>
+                  <td><a href="/lingbuzz/006500/current.pdf">pdf</a></td>
+                  <td><a href="/lingbuzz/006500">An Updated Paper</a></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const retryModule = await import("../src/utils/retry");
+    const fetchSpy = vi
+      .spyOn(retryModule, "fetchWithRetry")
+      .mockResolvedValue(new Response(mockHtml));
+
+    const rows = await fetchListingPage(
+      "https://ling.auf.net/lingbuzz/_listing?start=1"
+    );
+
+    expect(rows.length).toBe(2);
+    expect(rows[0].paperId).toBe("007001");
+    expect(rows[0].title).toBe("A New Paper");
+    expect(rows[1].paperId).toBe("006500");
+    expect(rows[1].status).toBe("2026-01");
+
+    fetchSpy.mockRestore();
   });
 });

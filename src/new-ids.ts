@@ -19,13 +19,14 @@ async function getFrontPageIds(): Promise<number[]> {
 
   const tables = document.body.querySelectorAll("table");
 
-  for (const table of Array.from(tables).slice(0, 2)) {
-    console.log("\n");
-    console.log(table.innerHTML);
+  let mainTable: Element | null = null;
+  for (const table of tables) {
+    const nested = table.querySelector("td > table");
+    if (nested?.querySelector(`a[href*="/lingbuzz/"]`)) {
+      mainTable = nested;
+      break;
+    }
   }
-
-  const mainTable =
-    tables.length > 2 ? tables[3].querySelector("td > table") : null;
 
   if (!mainTable) {
     throw new Error("Failed to scrape front page: main table not found");
