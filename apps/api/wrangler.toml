@@ -1,6 +1,7 @@
 name = "lingbuzz-api"
 main = "src/index.ts"
 compatibility_date = "2025-02-07"
+compatibility_flags = ["nodejs_compat"]
 
 # Turso credentials should be set via `wrangler secret put`:
 # wrangler secret put TURSO_DATABASE_URL

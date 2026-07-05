@@ -32,7 +32,7 @@ semantic.get("/", async (c) => {
     });
     const embeddingData =
       "data" in embeddingResponse ? embeddingResponse.data : undefined;
-    if (!embeddingData) {
+    if (!Array.isArray(embeddingData) || embeddingData.length < 1) {
       throw new Error("Unexpected AI response shape");
     }
     const vector = embeddingData[0];

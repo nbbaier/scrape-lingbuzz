@@ -44,7 +44,10 @@ admin.post("/embed", async (c) => {
 
       const embeddingData =
         "data" in embeddingResponse ? embeddingResponse.data : undefined;
-      if (!embeddingData) {
+      if (
+        !Array.isArray(embeddingData) ||
+        embeddingData.length !== batch.length
+      ) {
         throw new Error("Unexpected AI response shape");
       }
 
