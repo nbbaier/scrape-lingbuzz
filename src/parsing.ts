@@ -1,5 +1,4 @@
 import { JSDOM } from "jsdom";
-import { createControlCharsRegex } from "./constants";
 import {
   parseAbstract,
   parseCenterElement,
@@ -9,25 +8,18 @@ import { type Paper, PaperSchema } from "./schemas";
 import { splitKeywords } from "./split-keywords";
 import { logger } from "./utils/logger";
 
-let cachedDOMParser: InstanceType<typeof JSDOM>["window"]["DOMParser"] | null =
-  null;
-
-function getDOMParser() {
-  if (!cachedDOMParser) {
-    // Keep one empty JSDOM window alive so its DOMParser constructor stays valid.
-    const window = new JSDOM().window;
-    cachedDOMParser = window.DOMParser;
-  }
-  return cachedDOMParser;
-}
-
 const QUOTE_REGEX = /"/g;
 const WHITESPACE_REGEX = /\s+/g;
 const DOWNLOAD_COUNT_REGEX = /\d+/;
 const FORMAT_PREFIX_REGEX = /^Format:/;
 
 const stripControlChars = (value: string): string =>
-  value.replace(createControlCharsRegex(), "");
+  Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return !(code <= 31 || (code >= 127 && code <= 159));
+    })
+    .join("");
 
 const normalizeText = (value: string): string =>
   stripControlChars(value)
@@ -109,8 +101,7 @@ const extractRawAbstract = (document: Document): string => {
 };
 
 export function parsePaper(html: string, paperId: string): Paper | null {
-  const DOMParser = getDOMParser();
-  const document = new DOMParser().parseFromString(html, "text/html");
+  const document = new JSDOM(html).window.document;
   const pageTitle = document.querySelector("title")?.textContent;
 
   if (pageTitle === "lingbuzz - archive of linguistics articles") {

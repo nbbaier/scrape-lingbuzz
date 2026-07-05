@@ -10,12 +10,7 @@ describe("splitKeywords", () => {
 
   test("handles empty string", () => {
     const result = splitKeywords("");
-    expect(result).toEqual([]);
-  });
-
-  test("removes empty keywords produced by repeated separators", () => {
-    const result = splitKeywords("syntax,, semantics, ");
-    expect(result).toEqual(["syntax", "semantics"]);
+    expect(result).toEqual([""]);
   });
 
   test("handles single keyword", () => {

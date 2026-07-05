@@ -1,0 +1,1 @@
+ALTER TABLE `papers` ADD `embedded_at` integer;

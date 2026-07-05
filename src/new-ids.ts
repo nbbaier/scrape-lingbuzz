@@ -18,29 +18,23 @@ async function getFrontPageIds(): Promise<number[]> {
   const document = new JSDOM(html).window.document;
 
   const tables = document.body.querySelectorAll("table");
-
-  let mainTable: Element | null = null;
-  for (const table of tables) {
-    const nested = table.querySelector("td > table");
-    if (nested?.querySelector(`a[href*="/lingbuzz/"]`)) {
-      mainTable = nested;
-      break;
-    }
-  }
+  const mainTable =
+    tables.length > 2 ? tables[2].querySelector("td > table") : null;
 
   if (!mainTable) {
     throw new Error("Failed to scrape front page: main table not found");
   }
 
-  const ids = new Set<number>();
-  for (const a of mainTable.querySelectorAll("a")) {
-    const match = LINGBUZZ_ID_REGEX.exec(a.href);
-    if (match) {
-      ids.add(Number.parseInt(match[1], 10));
-    }
-  }
+  const hrefs = Array.from(mainTable.querySelectorAll("a"))
+    .map((a) => a.href)
+    .filter((href) => LINGBUZZ_ID_REGEX.test(href)) // filter hrefs that match the regex
+    .map((href) => {
+      const match = LINGBUZZ_ID_REGEX.exec(href);
+      return match ? match[1] : ""; // return the first capturing group (the 6-digit number)
+    })
+    .map((id) => Number.parseInt(id, 10));
 
-  return Array.from(ids);
+  return [...new Set(hrefs)];
 }
 
 /**
@@ -61,27 +55,21 @@ export async function newestId(): Promise<number> {
 /**
  * Retrieves the new IDs from the front page and compares them with the IDs of the current papers.
  *
- * @param existingPapers - Optional preloaded papers to avoid re-reading papers.json.
  * @returns A promise that resolves to an array of new IDs.
  */
-export async function newIds(existingPapers?: Paper[]): Promise<number[]> {
+export async function newIds(): Promise<number[]> {
   const hrefs = await getFrontPageIds();
 
-  let currentPapers = existingPapers ?? [];
+  let currentPapers: Paper[] = [];
 
-  if (!existingPapers) {
-    try {
-      currentPapers = await loadPapers();
-      if (currentPapers.length === 0) {
-        logger.info("No papers found in papers.json");
-        return [];
-      }
-    } catch (e) {
-      logger.error("Failed to load papers:", e);
+  try {
+    currentPapers = await loadPapers();
+    if (currentPapers.length === 0) {
+      logger.info("No papers found in papers.json");
       return [];
     }
-  } else if (currentPapers.length === 0) {
-    logger.info("No papers found in papers.json");
+  } catch (e) {
+    logger.error("Failed to load papers:", e);
     return [];
   }
 

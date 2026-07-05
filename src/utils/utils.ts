@@ -1,47 +1,18 @@
-import { access, readFile, rename, writeFile } from "node:fs/promises";
+import fs from "node:fs";
+import { JSDOM } from "jsdom";
 import {
   BASE_URL,
-  createControlCharsRegex,
   PAGINATION_FIRST_START,
   PAGINATION_INCREMENT,
   PAGINATION_SECOND_START,
   PAPERS_FILE_PATH,
 } from "../constants";
-import { type Paper, PaperSchema } from "../schemas";
-import type { Article, Author } from "../types";
+import type { Article, Author, Paper } from "../types";
 import { logger } from "./logger";
 import { fetchWithRetry } from "./retry";
 
-let cachedJSDOM: typeof import("jsdom").JSDOM | null = null;
-
-async function getJSDOM() {
-  if (!cachedJSDOM) {
-    const { JSDOM } = await import("jsdom");
-    cachedJSDOM = JSDOM;
-  }
-  return cachedJSDOM;
-}
-
 const PERSON_USERNAME_REGEX = /\/_person\/(.*)/;
 const LINGBUZZ_ID_REGEX = /\/lingbuzz\/(\d{6})/;
-const PAPER_COUNT_ELEMENT_REGEX =
-  /<center>\s*<b>\s*<a[^>]*>(.*?)<\/a>\s*<\/b>\s*<\/center>/is;
-
-const sanitizeString = (value: string): string =>
-  value.replace(createControlCharsRegex(), "").trim();
-
-export const sanitizePaper = (paper: Paper): Paper => ({
-  ...paper,
-  id: sanitizeString(paper.id),
-  title: sanitizeString(paper.title),
-  authors: paper.authors.map((author) => sanitizeString(author)),
-  date: sanitizeString(paper.date),
-  published_in: sanitizeString(paper.published_in),
-  keywords: paper.keywords.map((keyword) => sanitizeString(keyword)),
-  keywords_raw: sanitizeString(paper.keywords_raw),
-  abstract: sanitizeString(paper.abstract),
-  link: sanitizeString(paper.link),
-});
 
 /**
  * Asynchronous function that retrieves HTML content for a specified paper ID.
@@ -59,17 +30,16 @@ export async function getPaperHtml(id: string): Promise<string> {
 export async function getPaperCount(BASE_URL: string): Promise<number> {
   const res = await fetch(BASE_URL);
   const html = await res.text();
+  const document = new JSDOM(html).window.document;
 
-  // Use regex to find the paper count element: <center><b><a ...>...</a></b></center>
-  const match = html.match(PAPER_COUNT_ELEMENT_REGEX);
+  const paperCountElement = document.body.querySelector("center > b > a");
 
-  if (!match) {
+  if (!paperCountElement) {
     logger.error("Paper count element not found");
     process.exit(1);
   }
 
-  // Extract text and strip any internal HTML tags
-  const textContent = match[1].replace(/<[^>]*>/g, "") || "";
+  const textContent = paperCountElement.textContent || "";
   const numbers: number[] = textContent.match(/\d+/g)?.map(Number) || [];
   const paperCount = numbers.at(-1);
 
@@ -103,11 +73,10 @@ export async function generateUrls(
   return urls;
 }
 
-export async function getPageRows(url: string): Promise<Element[]> {
-  const JSDOMClass = await getJSDOM();
+export async function getPageRows(url: string): Promise<HTMLTableRowElement[]> {
   const res = await fetchWithRetry(url);
   const html = await res.text();
-  const document = new JSDOMClass(html).window.document;
+  const document = new JSDOM(html).window.document;
 
   const mainTable = document.body
     .querySelectorAll("table")[2]
@@ -128,7 +97,9 @@ export async function getPageRows(url: string): Promise<Element[]> {
   return Array.from(rows);
 }
 
-export const extractArticlesFromRow = (row: Element): Article | null => {
+export const extractArticlesFromRow = (
+  row: HTMLTableRowElement
+): Article | null => {
   const cells = row.querySelectorAll("td");
   if (cells.length < 4) {
     return null;
@@ -142,11 +113,9 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   const authorsMap = new Map<number, Author>();
 
   for (const [index, a] of authorsArray) {
-    const text = a.textContent?.trim() || "";
-    const parts = text.split(" ");
     const author: Author = {
-      firstName: parts[0] || "",
-      lastName: parts[1] || "",
+      firstName: a.textContent?.trim().split(" ")[0] || "",
+      lastName: a.textContent?.trim().split(" ")[1] || "",
       authorUrl: a.href || "",
       username: decodeURI(a.href).match(PERSON_USERNAME_REGEX)?.[1] || "",
     };
@@ -173,83 +142,26 @@ export const extractArticlesFromRow = (row: Element): Article | null => {
   };
 };
 
-let cachedPapers: Paper[] | null = null;
-let cachedPapersFilePath: string | null = null;
-
 /**
  * Loads previously scraped papers data from a JSON file.
  *
  * @param papersFilePath - The path to the papers JSON file. Defaults to PAPERS_FILE_PATH.
- * @param forceReload - Whether to bypass the cache and reload the file. Defaults to false.
  * @returns A promise that resolves to an array of Paper objects.
  * @throws If there is an error loading the papers data.
  */
 export async function loadPapers(
-  papersFilePath = PAPERS_FILE_PATH,
-  forceReload = false
+  papersFilePath = PAPERS_FILE_PATH
 ): Promise<Paper[]> {
-  if (
-    !forceReload &&
-    cachedPapers !== null &&
-    cachedPapersFilePath === papersFilePath
-  ) {
-    return [...cachedPapers];
-  }
-
   try {
-    try {
-      await access(papersFilePath);
-    } catch {
+    if (!fs.existsSync(papersFilePath)) {
       logger.info(`Creating ${papersFilePath}`);
-      await writeFile(papersFilePath, JSON.stringify([]), "utf8");
+      await fs.promises.writeFile(papersFilePath, JSON.stringify([]));
     }
-
-    const parsed = JSON.parse(
-      await readFile(papersFilePath, "utf8")
-    ) as unknown;
-    if (!Array.isArray(parsed)) {
-      throw new Error("papers.json does not contain an array");
-    }
-
-    const validPapers: Paper[] = [];
-    let invalidCount = 0;
-
-    for (const item of parsed) {
-      const result = PaperSchema.safeParse(item);
-      if (result.success) {
-        validPapers.push(result.data);
-      } else {
-        invalidCount++;
-      }
-    }
-
-    if (invalidCount > 0) {
-      logger.warn(
-        `Skipped ${invalidCount} invalid paper records from ${papersFilePath}`
-      );
-    }
-
-    cachedPapers = validPapers;
-    cachedPapersFilePath = papersFilePath;
-    return [...cachedPapers];
+    return JSON.parse(await fs.promises.readFile(papersFilePath, "utf-8"));
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
   }
-}
-
-export async function writePapersFile(
-  papers: Paper[],
-  papersFilePath = PAPERS_FILE_PATH
-): Promise<void> {
-  const sanitizedPapers = papers.map((paper) => sanitizePaper(paper));
-  const tempPath = `${papersFilePath}.tmp`;
-
-  await writeFile(tempPath, JSON.stringify(sanitizedPapers), "utf8");
-  await rename(tempPath, papersFilePath);
-
-  cachedPapers = sanitizedPapers;
-  cachedPapersFilePath = papersFilePath;
 }
 
 /**
@@ -273,15 +185,9 @@ export function updatePapers(
       merged.set(paper.id, paper);
     }
   }
-  const values = Array.from(merged.values());
-  const withIds = values.map((paper) => ({
-    paper,
-    numericId: Number.parseInt(paper.id, 10),
-  }));
-
-  withIds.sort((a, b) => a.numericId - b.numericId);
-
-  return withIds.map((item) => item.paper);
+  return Array.from(merged.values()).sort(
+    (a, b) => Number.parseInt(a.id, 10) - Number.parseInt(b.id, 10)
+  );
 }
 
 /**

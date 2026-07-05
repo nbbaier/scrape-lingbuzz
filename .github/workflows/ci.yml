@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - refactor/monorepo
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run check
+      - name: Typecheck (root/legacy)
+        run: bun run typecheck
+      - name: Typecheck db
+        run: bun --filter @lingbuzz/db typecheck
+      - name: Typecheck scraper
+        run: bun --filter @lingbuzz/scraper typecheck
+      - name: Typecheck api
+        run: bun --filter @lingbuzz/api typecheck
+      - name: Tests (legacy root src/)
+        run: bun run test
+      - name: Tests db
+        run: bun --filter @lingbuzz/db test
+      - name: Tests scraper
+        run: bun --filter @lingbuzz/scraper test
+      - name: Tests api
+        run: bun --filter @lingbuzz/api test

@@ -10,33 +10,17 @@ export function parseCenterElement(document: Document): string[] {
     return [];
   }
 
-  const lines: string[] = [];
-  let currentLine = "";
+  const linesWithHtml = centerElement.innerHTML.split(/<br\s*\/?>/gi);
 
-  const traverse = (node: Node) => {
-    if (node.nodeType === 3) {
-      // Text node
-      currentLine += node.textContent || "";
-    } else if (node.nodeType === 1) {
-      // Element node
-      const element = node as Element;
-      if (element.tagName.toLowerCase() === "br") {
-        lines.push(currentLine.trim());
-        currentLine = "";
-      } else {
-        for (const child of Array.from(node.childNodes)) {
-          traverse(child);
-        }
-      }
-    }
-  };
+  const tempDiv = document.createElement("div");
+  const lines = linesWithHtml
+    .map((line) => {
+      tempDiv.innerHTML = line;
+      return tempDiv.textContent?.trim() || "";
+    })
+    .filter(Boolean); // Filter out any empty strings
 
-  traverse(centerElement);
-  if (currentLine.trim()) {
-    lines.push(currentLine.trim());
-  }
-
-  return lines.filter(Boolean);
+  return lines;
 }
 
 /**
@@ -53,13 +37,9 @@ export function parseTable(document: Document): Map<string, string> {
 
   const tableDataMap = new Map<string, string>();
   for (const row of table.querySelectorAll("tr")) {
-    const cells: string[] = [];
-    for (const td of row.querySelectorAll("td")) {
-      const text = td.textContent?.trim();
-      if (text) {
-        cells.push(text);
-      }
-    }
+    const cells = Array.from(row.querySelectorAll("td"))
+      .map((td) => td.textContent?.trim())
+      .filter(Boolean); // This removes any falsy values, including empty strings
 
     if (cells.length >= 2) {
       const key = (cells[0] ?? "").replace(":", "").trim();

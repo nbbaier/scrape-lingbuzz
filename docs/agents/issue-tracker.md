@@ -17,8 +17,6 @@ Infer the repo from `git remote -v` — `gh` does this automatically when run in
 
 **PRs as a request surface: no.**
 
-`/triage` only processes issues in this repo; external PRs are left alone.
-
 ## When a skill says "publish to the issue tracker"
 
 Create a GitHub issue.
