@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import { file, write } from "bun";
 import { JSDOM } from "jsdom";
 import {
   BASE_URL,
@@ -156,10 +155,9 @@ export async function loadPapers(
   try {
     if (!fs.existsSync(papersFilePath)) {
       logger.info(`Creating ${papersFilePath}`);
-      await write(papersFilePath, JSON.stringify([]));
+      await fs.promises.writeFile(papersFilePath, JSON.stringify([]));
     }
-    const papersFile = file(papersFilePath);
-    return JSON.parse(await papersFile.text());
+    return JSON.parse(await fs.promises.readFile(papersFilePath, "utf-8"));
   } catch (error) {
     logger.error("Failed to load papers:", error);
     throw new Error("Error loading papers data");
