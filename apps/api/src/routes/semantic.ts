@@ -30,7 +30,12 @@ semantic.get("/", async (c) => {
     const embeddingResponse = await c.env.AI.run("@cf/baai/bge-base-en-v1.5", {
       text: [query],
     });
-    const vector = embeddingResponse.data[0];
+    const embeddingData =
+      "data" in embeddingResponse ? embeddingResponse.data : undefined;
+    if (!Array.isArray(embeddingData) || embeddingData.length < 1) {
+      throw new Error("Unexpected AI response shape");
+    }
+    const vector = embeddingData[0];
 
     const vectorResults = await c.env.VECTORIZE.query(vector, {
       topK: limit,

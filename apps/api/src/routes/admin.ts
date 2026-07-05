@@ -42,9 +42,18 @@ admin.post("/embed", async (c) => {
         { text: texts }
       );
 
+      const embeddingData =
+        "data" in embeddingResponse ? embeddingResponse.data : undefined;
+      if (
+        !Array.isArray(embeddingData) ||
+        embeddingData.length !== batch.length
+      ) {
+        throw new Error("Unexpected AI response shape");
+      }
+
       const vectors = batch.map((p, idx) => ({
         id: p.lingbuzzId,
-        values: embeddingResponse.data[idx],
+        values: embeddingData[idx],
         metadata: {
           lingbuzzId: p.lingbuzzId,
           title: p.paperTitle,
