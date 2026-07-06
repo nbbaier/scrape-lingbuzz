@@ -112,8 +112,15 @@ export async function fetchListingPage(url: string): Promise<ListingRow[]> {
   const document = new JSDOM(html).window.document;
 
   const tables = document.body.querySelectorAll("table");
-  const mainTable =
-    tables.length > 2 ? tables[2].querySelector("td > table") : null;
+
+  let mainTable: Element | null = null;
+  for (const table of tables) {
+    const nested = table.querySelector("td > table");
+    if (nested?.querySelector(`a[href*="/lingbuzz/"]`)) {
+      mainTable = nested;
+      break;
+    }
+  }
 
   if (!mainTable) {
     logger.warn(`Main table not found on listing page: ${url}`);

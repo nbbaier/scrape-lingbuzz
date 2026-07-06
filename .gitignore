@@ -1,9 +1,13 @@
+# Dependencies
+node_modules/
+
 # Build and test output
 coverage/
 dist/
 *.tsbuildinfo
 
 # Local environment overrides
+.env
 .env.local
 .env.*.local
 
