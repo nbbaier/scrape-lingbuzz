@@ -3,8 +3,13 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createDb } from "../src/client";
 
+const url = process.env.TURSO_DATABASE_URL;
+if (!url) {
+  throw new Error("TURSO_DATABASE_URL environment variable is required");
+}
+
 const db = createDb({
-  url: process.env.TURSO_DATABASE_URL as string,
+  url,
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
