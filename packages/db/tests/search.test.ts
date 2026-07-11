@@ -1,7 +1,14 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { createDb, type Db } from "../src/client";
+import {
+  rebuildFtsIndex,
+  SearchSyntaxError,
+  searchPapers,
+  searchPapersCount,
+} from "../src/queries/search";
 
 const BREAKPOINT = "--> statement-breakpoint";
 const FTS_MIGRATION_PATH = new URL(
@@ -9,12 +16,8 @@ const FTS_MIGRATION_PATH = new URL(
   import.meta.url
 );
 
-type SearchModule = typeof import("../src/queries/search");
-type DbModule = typeof import("../src");
-
 interface TestContext {
-  db: DbModule["default"];
-  search: SearchModule;
+  db: Db;
   tempDir: string;
 }
 
@@ -49,31 +52,14 @@ const BASE_SCHEMA_STATEMENTS = [
 
 describe.sequential("search queries", () => {
   let context: TestContext;
-  let previousDatabaseUrl: string | undefined;
-  let previousAuthToken: string | undefined;
 
   beforeEach(async () => {
-    previousDatabaseUrl = process.env.TURSO_DATABASE_URL;
-    previousAuthToken = process.env.TURSO_AUTH_TOKEN;
-
     const tempDir = await mkdtemp(join(tmpdir(), "lingbuzz-db-search-"));
     const dbPath = join(tempDir, "test.db");
 
-    process.env.TURSO_DATABASE_URL = `file:${dbPath}`;
-    process.env.TURSO_AUTH_TOKEN = "test-token";
+    const db = createDb({ url: `file:${dbPath}` });
 
-    vi.resetModules();
-
-    const [dbModule, searchModule] = await Promise.all([
-      import("../src"),
-      import("../src/queries/search"),
-    ]);
-
-    context = {
-      db: dbModule.default,
-      search: searchModule,
-      tempDir,
-    };
+    context = { db, tempDir };
 
     await setupBaseSchema(context.db);
   });
@@ -82,21 +68,21 @@ describe.sequential("search queries", () => {
     await seedInitialData(context.db);
     await applyFtsMigration(context.db);
 
-    const allFieldResults = await context.search.searchPapers({
+    const allFieldResults = await searchPapers(context.db, {
       query: "syntax",
       field: "all",
     });
     expect(allFieldResults).toHaveLength(1);
     expect(allFieldResults[0]?.lingbuzzId).toBe("000001");
 
-    const titleFieldResults = await context.search.searchPapers({
+    const titleFieldResults = await searchPapers(context.db, {
       query: "phonology",
       field: "title",
     });
     expect(titleFieldResults).toHaveLength(1);
     expect(titleFieldResults[0]?.lingbuzzId).toBe("000002");
 
-    const keywordCount = await context.search.searchPapersCount({
+    const keywordCount = await searchPapersCount(context.db, {
       query: "morphology",
       field: "keywords",
     });
@@ -127,14 +113,14 @@ describe.sequential("search queries", () => {
       "INSERT INTO authors_to_papers (author_id, paper_id, author_position) VALUES (10, 10, 1)"
     );
 
-    const keywordResults = await context.search.searchPapers({
+    const keywordResults = await searchPapers(context.db, {
       query: "xylophonics",
       field: "keywords",
     });
     expect(keywordResults).toHaveLength(1);
     expect(keywordResults[0]?.lingbuzzId).toBe("000010");
 
-    const authorResults = await context.search.searchPapers({
+    const authorResults = await searchPapers(context.db, {
       query: "Lovelace",
       field: "authors",
     });
@@ -144,12 +130,12 @@ describe.sequential("search queries", () => {
       context.db,
       "UPDATE keywords SET keyword = 'prosodics' WHERE keyword_id = 10"
     );
-    const oldKeywordCount = await context.search.searchPapersCount({
+    const oldKeywordCount = await searchPapersCount(context.db, {
       query: "xylophonics",
       field: "keywords",
     });
     expect(oldKeywordCount).toBe(0);
-    const newKeywordCount = await context.search.searchPapersCount({
+    const newKeywordCount = await searchPapersCount(context.db, {
       query: "prosodics",
       field: "keywords",
     });
@@ -159,12 +145,12 @@ describe.sequential("search queries", () => {
       context.db,
       "UPDATE authors SET last_name = 'Turing' WHERE author_id = 10"
     );
-    const oldAuthorCount = await context.search.searchPapersCount({
+    const oldAuthorCount = await searchPapersCount(context.db, {
       query: "Lovelace",
       field: "authors",
     });
     expect(oldAuthorCount).toBe(0);
-    const newAuthorCount = await context.search.searchPapersCount({
+    const newAuthorCount = await searchPapersCount(context.db, {
       query: "Turing",
       field: "authors",
     });
@@ -174,7 +160,7 @@ describe.sequential("search queries", () => {
       context.db,
       "DELETE FROM keywords_to_papers WHERE keyword_id = 10 AND paper_id = 10"
     );
-    const removedKeywordCount = await context.search.searchPapersCount({
+    const removedKeywordCount = await searchPapersCount(context.db, {
       query: "prosodics",
       field: "keywords",
     });
@@ -189,21 +175,21 @@ describe.sequential("search queries", () => {
       "INSERT INTO papers (paper_id, lingbuzz_id, paper_title, abstract) VALUES (20, '000020', 'Morphology Workshop', 'Testing rebuild flow')"
     );
 
-    const baselineCount = await context.search.searchPapersCount({
+    const baselineCount = await searchPapersCount(context.db, {
       query: "morphology",
       field: "title",
     });
     expect(baselineCount).toBe(1);
 
     await runStatement(context.db, "DELETE FROM papers_fts");
-    const clearedCount = await context.search.searchPapersCount({
+    const clearedCount = await searchPapersCount(context.db, {
       query: "morphology",
       field: "title",
     });
     expect(clearedCount).toBe(0);
 
-    await context.search.rebuildFtsIndex();
-    const rebuiltCount = await context.search.searchPapersCount({
+    await rebuildFtsIndex(context.db);
+    const rebuiltCount = await searchPapersCount(context.db, {
       query: "morphology",
       field: "title",
     });
@@ -214,17 +200,17 @@ describe.sequential("search queries", () => {
     await applyFtsMigration(context.db);
 
     await expect(
-      context.search.searchPapers({
+      searchPapers(context.db, {
         query: '"',
       })
-    ).rejects.toBeInstanceOf(context.search.SearchSyntaxError);
+    ).rejects.toBeInstanceOf(SearchSyntaxError);
   });
 
   test("clamps pagination values", async () => {
     await seedInitialData(context.db);
     await applyFtsMigration(context.db);
 
-    const results = await context.search.searchPapers({
+    const results = await searchPapers(context.db, {
       query: "syntax OR phonology",
       limit: 999,
       offset: -10,
@@ -234,28 +220,16 @@ describe.sequential("search queries", () => {
 
   afterEach(async () => {
     await rm(context.tempDir, { recursive: true, force: true });
-
-    if (previousDatabaseUrl === undefined) {
-      process.env.TURSO_DATABASE_URL = undefined;
-    } else {
-      process.env.TURSO_DATABASE_URL = previousDatabaseUrl;
-    }
-
-    if (previousAuthToken === undefined) {
-      process.env.TURSO_AUTH_TOKEN = undefined;
-    } else {
-      process.env.TURSO_AUTH_TOKEN = previousAuthToken;
-    }
   });
 });
 
-async function setupBaseSchema(db: DbModule["default"]): Promise<void> {
+async function setupBaseSchema(db: Db): Promise<void> {
   for (const statement of BASE_SCHEMA_STATEMENTS) {
     await runStatement(db, statement);
   }
 }
 
-async function applyFtsMigration(db: DbModule["default"]): Promise<void> {
+async function applyFtsMigration(db: Db): Promise<void> {
   const migrationSql = await readFile(FTS_MIGRATION_PATH, "utf8");
   const statements = migrationSql
     .split(BREAKPOINT)
@@ -267,7 +241,7 @@ async function applyFtsMigration(db: DbModule["default"]): Promise<void> {
   }
 }
 
-async function seedInitialData(db: DbModule["default"]): Promise<void> {
+async function seedInitialData(db: Db): Promise<void> {
   await runStatement(
     db,
     "INSERT INTO papers (paper_id, lingbuzz_id, paper_title, abstract) VALUES (1, '000001', 'Syntax and Meaning', 'This syntax paper studies agreement')"
@@ -318,9 +292,6 @@ async function seedInitialData(db: DbModule["default"]): Promise<void> {
   );
 }
 
-async function runStatement(
-  db: DbModule["default"],
-  statement: string
-): Promise<void> {
+async function runStatement(db: Db, statement: string): Promise<void> {
   await db.run(statement);
 }

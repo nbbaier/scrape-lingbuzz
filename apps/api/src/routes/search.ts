@@ -5,9 +5,10 @@ import {
   searchPapersCount,
 } from "@lingbuzz/db/queries/search";
 import { Hono } from "hono";
+import type { Variables } from "../types";
 import { clamp, parseInteger } from "../utils";
 
-const search = new Hono();
+const search = new Hono<{ Variables: Variables }>();
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 const MIN_LIMIT = 1;
@@ -51,13 +52,13 @@ search.get("/", async (c) => {
 
   try {
     const [data, total] = await Promise.all([
-      searchPapers({
+      searchPapers(c.get("db"), {
         query,
         field,
         limit,
         offset,
       }),
-      searchPapersCount({
+      searchPapersCount(c.get("db"), {
         query,
         field,
       }),

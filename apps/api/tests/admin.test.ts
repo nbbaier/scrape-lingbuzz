@@ -7,6 +7,7 @@ vi.mock("@lingbuzz/db/queries/select", () => {
   };
 });
 
+import type { Db } from "@lingbuzz/db";
 import {
   markPapersEmbedded,
   selectUnembeddedPapers,
@@ -19,6 +20,7 @@ const mockMarkEmbedded = vi.mocked(markPapersEmbedded);
 
 const mockAI = { run: vi.fn() };
 const mockVectorize = { upsert: vi.fn() };
+const mockDb = {} as Db;
 const TEST_TOKEN = "test-token";
 
 function createApp() {
@@ -29,6 +31,7 @@ function createApp() {
       VECTORIZE: mockVectorize,
       ADMIN_TOKEN: TEST_TOKEN,
     } as Record<string, unknown>;
+    c.set("db", mockDb);
     await next();
   });
   app.route("/", adminRoute);
@@ -180,6 +183,6 @@ describe("POST /embed", () => {
       headers: { Authorization: `Bearer ${TEST_TOKEN}` },
     });
 
-    expect(mockMarkEmbedded).toHaveBeenCalledWith([10, 20]);
+    expect(mockMarkEmbedded).toHaveBeenCalledWith(mockDb, [10, 20]);
   });
 });

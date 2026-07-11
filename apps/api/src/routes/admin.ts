@@ -4,6 +4,7 @@ import {
 } from "@lingbuzz/db/queries/select";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
+import type { Variables } from "../types";
 
 interface Bindings {
   ADMIN_TOKEN: string;
@@ -14,7 +15,7 @@ interface Bindings {
 const BATCH_SIZE = 100;
 const MAX_PAPERS = 500;
 
-const admin = new Hono<{ Bindings: Bindings }>();
+const admin = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 admin.use("*", async (c, next) => {
   const auth = bearerAuth({ token: c.env.ADMIN_TOKEN });
@@ -22,7 +23,9 @@ admin.use("*", async (c, next) => {
 });
 
 admin.post("/embed", async (c) => {
-  const unembedded = await selectUnembeddedPapers({ limit: MAX_PAPERS });
+  const unembedded = await selectUnembeddedPapers(c.get("db"), {
+    limit: MAX_PAPERS,
+  });
 
   if (unembedded.length === 0) {
     return c.json({ embedded: 0, remaining: 0 });
@@ -64,7 +67,7 @@ admin.post("/embed", async (c) => {
       await c.env.VECTORIZE.upsert(vectors);
 
       const paperIds = batch.map((p) => p.paperId);
-      await markPapersEmbedded(paperIds);
+      await markPapersEmbedded(c.get("db"), paperIds);
 
       embedded += batch.length;
     } catch (err) {
@@ -73,7 +76,9 @@ admin.post("/embed", async (c) => {
     }
   }
 
-  const remainingPapers = await selectUnembeddedPapers({ limit: 1 });
+  const remainingPapers = await selectUnembeddedPapers(c.get("db"), {
+    limit: 1,
+  });
   const remaining =
     remainingPapers.length > 0 ? unembedded.length - embedded : 0;
 

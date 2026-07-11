@@ -1,3 +1,4 @@
+import type { Db } from "@lingbuzz/db";
 import {
   buildConflictUpdateColumns,
   type InsertAuthor,
@@ -23,6 +24,7 @@ import { logger } from "./utils/logger";
  * Persists a parsed paper and its keyword/author relations to the database.
  */
 export async function persistPaper(
+  db: Db,
   paper: ParsedPaper,
   authorMap: Map<number, ListingAuthor>
 ): Promise<{ paperId: number }> {
@@ -42,7 +44,7 @@ export async function persistPaper(
     paperUrl: paper.paperUrl,
   };
 
-  const paperResult = await insertPaper(newPaper, {
+  const paperResult = await insertPaper(db, newPaper, {
     returning: { paperId: papers.paperId },
   });
 
@@ -54,10 +56,11 @@ export async function persistPaper(
       continue;
     }
     await insertKeyword(
+      db,
       { keyword },
       { onConflictDo: { target: keywords.keyword } }
     );
-    const keywordId = await selectKeywordId(keyword);
+    const keywordId = await selectKeywordId(db, keyword);
     if (!keywordId) {
       logger.warn(`No keywordId found for keyword: ${keyword}`);
       continue;
@@ -65,7 +68,7 @@ export async function persistPaper(
 
     const mapping: InsertKeywordsPaper = { keywordId, paperId };
     try {
-      await insertKeywordsPapers(mapping);
+      await insertKeywordsPapers(db, mapping);
     } catch (error) {
       logger.error(
         `Failed to insert keyword-paper relation for keywordId: ${keywordId}, paperId: ${paperId}`,
@@ -76,7 +79,7 @@ export async function persistPaper(
 
   // Insert author-paper relations
   for (const [position, authorData] of authorMap) {
-    const authorId = await ensureAuthor(authorData);
+    const authorId = await ensureAuthor(db, authorData);
     if (!authorId) {
       continue;
     }
@@ -87,7 +90,7 @@ export async function persistPaper(
       authorPosition: position,
     };
     try {
-      await insertAuthorsPapers(mapping);
+      await insertAuthorsPapers(db, mapping);
     } catch (error) {
       logger.error(
         `Failed to insert author-paper relation for authorId: ${authorId}, paperId: ${paperId}`,
@@ -103,8 +106,11 @@ export async function persistPaper(
  * Ensures an author exists in the database. Creates them if not found,
  * fetching their profile for enrichment data.
  */
-async function ensureAuthor(author: ListingAuthor): Promise<number | null> {
-  const existing = await selectAuthorByUsername(author.username);
+async function ensureAuthor(
+  db: Db,
+  author: ListingAuthor
+): Promise<number | null> {
+  const existing = await selectAuthorByUsername(db, author.username);
   if (existing) {
     return existing.authorId;
   }
@@ -136,7 +142,7 @@ async function ensureAuthor(author: ListingAuthor): Promise<number | null> {
     website,
   };
 
-  const result = await insertAuthor(newAuthor, {
+  const result = await insertAuthor(db, newAuthor, {
     returning: { authorId: authors.authorId },
     onConflictDoUpdate: {
       target: [authors.username],

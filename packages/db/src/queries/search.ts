@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import db from "..";
+import type { Db } from "../client";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -91,12 +91,15 @@ export class SearchSyntaxError extends Error {
   }
 }
 
-export async function searchPapers({
-  query,
-  limit = DEFAULT_LIMIT,
-  offset = DEFAULT_OFFSET,
-  field = "all",
-}: SearchOptions): Promise<SearchResult[]> {
+export async function searchPapers(
+  db: Db,
+  {
+    query,
+    limit = DEFAULT_LIMIT,
+    offset = DEFAULT_OFFSET,
+    field = "all",
+  }: SearchOptions
+): Promise<SearchResult[]> {
   const normalizedQuery = normalizeQuery(query);
   const matchQuery = buildMatchQuery(normalizedQuery, field);
   const normalizedLimit = clamp(limit, MIN_LIMIT, MAX_LIMIT);
@@ -131,10 +134,10 @@ export async function searchPapers({
   }
 }
 
-export async function searchPapersCount({
-  query,
-  field = "all",
-}: Pick<SearchOptions, "query" | "field">): Promise<number> {
+export async function searchPapersCount(
+  db: Db,
+  { query, field = "all" }: Pick<SearchOptions, "query" | "field">
+): Promise<number> {
   const normalizedQuery = normalizeQuery(query);
   const matchQuery = buildMatchQuery(normalizedQuery, field);
 
@@ -151,7 +154,7 @@ export async function searchPapersCount({
   }
 }
 
-export async function rebuildFtsIndex(): Promise<void> {
+export async function rebuildFtsIndex(db: Db): Promise<void> {
   await db.run(sql`DELETE FROM papers_fts`);
   await db.run(FTS_REBUILD_INSERT_SQL);
   await db.run(sql`INSERT INTO papers_fts(papers_fts) VALUES('optimize')`);
