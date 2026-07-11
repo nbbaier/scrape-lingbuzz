@@ -18,15 +18,31 @@ vi.mock("@lingbuzz/db/queries/search", () => {
   };
 });
 
+import type { Db } from "@lingbuzz/db";
 import {
   SearchSyntaxError,
   searchPapers,
   searchPapersCount,
 } from "@lingbuzz/db/queries/search";
+import { Hono } from "hono";
 import searchRoute from "../src/routes/search";
 
 const mockSearchPapers = vi.mocked(searchPapers);
 const mockSearchPapersCount = vi.mocked(searchPapersCount);
+
+const mockDb = {} as Db;
+
+function createApp() {
+  const app = new Hono();
+  app.use("*", async (c, next) => {
+    c.set("db", mockDb);
+    await next();
+  });
+  app.route("/", searchRoute);
+  return app;
+}
+
+const app = createApp();
 
 describe("GET /search", () => {
   beforeEach(() => {
@@ -36,7 +52,7 @@ describe("GET /search", () => {
   });
 
   test("returns 400 when query parameter is missing", async () => {
-    const response = await searchRoute.request("http://localhost/");
+    const response = await app.request("http://localhost/");
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
@@ -47,7 +63,7 @@ describe("GET /search", () => {
   });
 
   test("returns 400 for invalid field values", async () => {
-    const response = await searchRoute.request(
+    const response = await app.request(
       "http://localhost/?q=syntax&field=downloads"
     );
 
@@ -73,18 +89,18 @@ describe("GET /search", () => {
     mockSearchPapers.mockResolvedValueOnce(data);
     mockSearchPapersCount.mockResolvedValueOnce(142);
 
-    const response = await searchRoute.request(
+    const response = await app.request(
       "http://localhost/?q=syntax%20OR%20morphology&field=title&limit=500&offset=-10"
     );
 
     expect(response.status).toBe(200);
-    expect(mockSearchPapers).toHaveBeenCalledWith({
+    expect(mockSearchPapers).toHaveBeenCalledWith(mockDb, {
       query: "syntax OR morphology",
       field: "title",
       limit: 100,
       offset: 0,
     });
-    expect(mockSearchPapersCount).toHaveBeenCalledWith({
+    expect(mockSearchPapersCount).toHaveBeenCalledWith(mockDb, {
       query: "syntax OR morphology",
       field: "title",
     });
@@ -102,7 +118,7 @@ describe("GET /search", () => {
   test("returns 400 when query syntax is invalid", async () => {
     mockSearchPapers.mockRejectedValueOnce(new SearchSyntaxError('"'));
 
-    const response = await searchRoute.request("http://localhost/?q=%22");
+    const response = await app.request("http://localhost/?q=%22");
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
@@ -113,7 +129,7 @@ describe("GET /search", () => {
   test("returns 500 for unexpected failures", async () => {
     mockSearchPapers.mockRejectedValueOnce(new Error("database down"));
 
-    const response = await searchRoute.request("http://localhost/?q=syntax");
+    const response = await app.request("http://localhost/?q=syntax");
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({

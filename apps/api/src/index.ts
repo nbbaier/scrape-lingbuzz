@@ -1,9 +1,11 @@
+import { createDb } from "@lingbuzz/db";
 import { Hono } from "hono";
 import admin from "./routes/admin";
 import authors from "./routes/authors";
 import papers from "./routes/papers";
 import search from "./routes/search";
 import semantic from "./routes/semantic";
+import type { Variables } from "./types";
 
 interface Bindings {
   ADMIN_TOKEN: string;
@@ -13,12 +15,16 @@ interface Bindings {
   VECTORIZE: VectorizeIndex;
 }
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Stopgap: set process.env from Worker bindings for @lingbuzz/db
 app.use("*", async (c, next) => {
-  process.env.TURSO_DATABASE_URL = c.env.TURSO_DATABASE_URL;
-  process.env.TURSO_AUTH_TOKEN = c.env.TURSO_AUTH_TOKEN;
+  c.set(
+    "db",
+    createDb({
+      url: c.env.TURSO_DATABASE_URL,
+      authToken: c.env.TURSO_AUTH_TOKEN,
+    })
+  );
   await next();
 });
 

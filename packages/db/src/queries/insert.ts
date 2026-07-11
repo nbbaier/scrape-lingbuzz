@@ -7,7 +7,7 @@ import type {
   SQLiteUpdateSetSource,
 } from "drizzle-orm/sqlite-core";
 import { snakeCase } from "text-snake-case";
-import db from "..";
+import type { Db } from "../client";
 import {
   authors,
   authorsToPapers,
@@ -74,6 +74,7 @@ async function insertIntoTable<
     | Partial<Record<keyof TableSelect, SQLiteColumn>>
     | undefined = undefined,
 >(
+  db: Db,
   table: TTable,
   data: TableInsert,
   {
@@ -122,10 +123,12 @@ async function insertIntoTable<
 export function insertPaper<
   T extends Partial<Record<keyof Paper, SQLiteColumn>> | undefined = undefined,
 >(
+  db: Db,
   paper: InsertPaper,
   options?: InsertOptions<typeof papers, T>
 ): Promise<InsertIntoTableReturnType<T, Paper>> {
   return insertIntoTable<typeof papers, Paper, InsertPaper, T>(
+    db,
     papers,
     paper,
     options
@@ -134,8 +137,9 @@ export function insertPaper<
 
 export function insertAuthor<
   T extends Partial<Record<keyof Author, SQLiteColumn>> | undefined = undefined,
->(author: InsertAuthor, options?: InsertOptions<typeof authors, T>) {
+>(db: Db, author: InsertAuthor, options?: InsertOptions<typeof authors, T>) {
   return insertIntoTable<typeof authors, Author, InsertAuthor, T>(
+    db,
     authors,
     author,
     options
@@ -146,8 +150,9 @@ export function insertKeyword<
   T extends
     | Partial<Record<keyof Keyword, SQLiteColumn>>
     | undefined = undefined,
->(keyword: InsertKeyword, options?: InsertOptions<typeof keywords, T>) {
+>(db: Db, keyword: InsertKeyword, options?: InsertOptions<typeof keywords, T>) {
   return insertIntoTable<typeof keywords, Keyword, InsertKeyword, T>(
+    db,
     keywords,
     keyword,
     options
@@ -159,6 +164,7 @@ export function insertAuthorsPapers<
     | Partial<Record<keyof AuthorPaper, SQLiteColumn>>
     | undefined = undefined,
 >(
+  db: Db,
   authorsPaper: InsertAuthorsPaper,
   options?: InsertOptions<typeof authorsToPapers, T>
 ) {
@@ -167,7 +173,7 @@ export function insertAuthorsPapers<
     AuthorPaper,
     InsertAuthorsPaper,
     T
-  >(authorsToPapers, authorsPaper, options);
+  >(db, authorsToPapers, authorsPaper, options);
 }
 
 export function insertKeywordsPapers<
@@ -175,6 +181,7 @@ export function insertKeywordsPapers<
     | Partial<Record<keyof KeywordPaper, SQLiteColumn>>
     | undefined = undefined,
 >(
+  db: Db,
   keywordsPaper: InsertKeywordsPaper,
   options?: InsertOptions<typeof keywordsToPapers, T>
 ) {
@@ -183,5 +190,5 @@ export function insertKeywordsPapers<
     KeywordPaper,
     InsertKeywordsPaper,
     T
-  >(keywordsToPapers, keywordsPaper, options);
+  >(db, keywordsToPapers, keywordsPaper, options);
 }

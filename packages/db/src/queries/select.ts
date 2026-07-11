@@ -1,5 +1,5 @@
 import { eq, inArray, isNull } from "drizzle-orm";
-import db from "..";
+import type { Db } from "../client";
 import {
   type authors,
   authorsToPapers,
@@ -18,25 +18,28 @@ export type SelectAuthorWithoutTime = Omit<
 export type SelectKeyword = typeof keywords.$inferSelect;
 
 /// AUTHORS ///
-export async function selectAuthors({
-  limit,
-}: {
-  limit?: number;
-} = {}): Promise<SelectAuthor[]> {
+export async function selectAuthors(
+  db: Db,
+  {
+    limit,
+  }: {
+    limit?: number;
+  } = {}
+): Promise<SelectAuthor[]> {
   const result = await db.query.authors.findMany({
     limit,
   });
   return result;
 }
 
-export async function selectAuthorByUsername(username: string) {
+export async function selectAuthorByUsername(db: Db, username: string) {
   const result = await db.query.authors.findFirst({
     where: (authors, { eq }) => eq(authors.username, username),
   });
   return result;
 }
 
-export async function selectAuthorByEmail(email: string) {
+export async function selectAuthorByEmail(db: Db, email: string) {
   const result = await db.query.authors.findFirst({
     where: (authors, { eq }) => eq(authors.email, email),
   });
@@ -44,18 +47,21 @@ export async function selectAuthorByEmail(email: string) {
 }
 
 /// KEYWORDS ///
-export async function selectKeywords({
-  limit,
-}: {
-  limit?: number;
-} = {}): Promise<SelectKeyword[]> {
+export async function selectKeywords(
+  db: Db,
+  {
+    limit,
+  }: {
+    limit?: number;
+  } = {}
+): Promise<SelectKeyword[]> {
   const result = await db.query.keywords.findMany({
     limit,
   });
   return result;
 }
 
-export async function selectKeywordId(keyword: string) {
+export async function selectKeywordId(db: Db, keyword: string) {
   const result = await db.query.keywords.findFirst({
     where: (keywords, { eq }) => eq(keywords.keyword, keyword),
   });
@@ -63,7 +69,7 @@ export async function selectKeywordId(keyword: string) {
 }
 
 /// PAPERS ///
-export async function selectPapers({ limit }: { limit?: number } = {}) {
+export async function selectPapers(db: Db, { limit }: { limit?: number } = {}) {
   const result = await db.query.papers.findMany({
     with: {
       authorsToPapers: {
@@ -87,7 +93,7 @@ export async function selectPapers({ limit }: { limit?: number } = {}) {
   return result;
 }
 
-export async function selectPaperByLingbuzzId(lingbuzzId: string) {
+export async function selectPaperByLingbuzzId(db: Db, lingbuzzId: string) {
   const result = await db.query.papers.findFirst({
     where: (papers, { eq }) => eq(papers.lingbuzzId, lingbuzzId),
     with: {
@@ -112,6 +118,7 @@ export async function selectPaperByLingbuzzId(lingbuzzId: string) {
 }
 
 export async function selectPapersByAuthorId(
+  db: Db,
   authorId: number,
   { limit }: { limit?: number } = {}
 ) {
@@ -126,6 +133,7 @@ export async function selectPapersByAuthorId(
   return result;
 }
 export async function selectPapersByKeyword(
+  db: Db,
   keyword: string,
   { limit }: { limit?: number } = {}
 ) {
@@ -144,11 +152,14 @@ export async function selectPapersByKeyword(
 }
 
 /// UNEMBEDDED PAPERS ///
-export async function selectUnembeddedPapers({
-  limit,
-}: {
-  limit?: number;
-} = {}) {
+export async function selectUnembeddedPapers(
+  db: Db,
+  {
+    limit,
+  }: {
+    limit?: number;
+  } = {}
+) {
   const result = await db
     .select({
       paperId: papers.paperId,
@@ -162,7 +173,7 @@ export async function selectUnembeddedPapers({
   return result;
 }
 
-export async function markPapersEmbedded(paperIds: number[]) {
+export async function markPapersEmbedded(db: Db, paperIds: number[]) {
   if (paperIds.length === 0) {
     return;
   }

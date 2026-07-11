@@ -6,8 +6,11 @@ vi.mock("@lingbuzz/db/queries/select", () => ({
   selectPaperByLingbuzzId: vi.fn(),
 }));
 
+import type { Db } from "@lingbuzz/db";
 import { selectPaperByLingbuzzId } from "@lingbuzz/db/queries/select";
 import { classifyRows } from "../src/detect";
+
+const mockDb = {} as Db;
 
 const mockSelect = selectPaperByLingbuzzId as ReturnType<typeof vi.fn>;
 
@@ -26,7 +29,7 @@ function makeRow(overrides: Partial<ListingRow> = {}): ListingRow {
 describe("classifyRows", () => {
   test("freshly changed → always update-version", async () => {
     const rows = [makeRow({ status: "freshly changed" })];
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe("update-version");
@@ -37,7 +40,7 @@ describe("classifyRows", () => {
   test("new + not in DB → full-scrape", async () => {
     mockSelect.mockResolvedValueOnce(undefined);
     const rows = [makeRow({ status: "new" })];
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe("full-scrape");
@@ -46,7 +49,7 @@ describe("classifyRows", () => {
   test("new + in DB → skip", async () => {
     mockSelect.mockResolvedValueOnce({ paperId: 1, lingbuzzId: "007001" });
     const rows = [makeRow({ status: "new" })];
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe("skip");
@@ -55,7 +58,7 @@ describe("classifyRows", () => {
   test("date-only + not in DB → full-scrape", async () => {
     mockSelect.mockResolvedValueOnce(undefined);
     const rows = [makeRow({ status: "2026-01" })];
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe("full-scrape");
@@ -64,7 +67,7 @@ describe("classifyRows", () => {
   test("date-only + in DB → skip", async () => {
     mockSelect.mockResolvedValueOnce({ paperId: 1, lingbuzzId: "007001" });
     const rows = [makeRow({ status: "2026-01" })];
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
 
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe("skip");
@@ -81,7 +84,7 @@ describe("classifyRows", () => {
       makeRow({ paperId: "005000", status: "2025-06" }),
     ];
 
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(mockDb, rows);
     expect(actions).toHaveLength(3);
     expect(actions[0].action).toBe("full-scrape");
     expect(actions[1].action).toBe("update-version");

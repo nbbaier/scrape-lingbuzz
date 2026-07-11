@@ -1,3 +1,4 @@
+import type { Db } from "@lingbuzz/db";
 import { selectPaperByLingbuzzId } from "@lingbuzz/db/queries/select";
 import type { ListingRow } from "./types";
 
@@ -16,6 +17,7 @@ export type ScrapeAction =
  * - date-only + in DB → skip
  */
 export async function classifyRows(
+  db: Db,
   rows: ListingRow[]
 ): Promise<ScrapeAction[]> {
   const actions: ScrapeAction[] = [];
@@ -26,7 +28,7 @@ export async function classifyRows(
       continue;
     }
 
-    const existing = await selectPaperByLingbuzzId(row.paperId);
+    const existing = await selectPaperByLingbuzzId(db, row.paperId);
 
     if (existing) {
       actions.push({

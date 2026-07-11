@@ -1,3 +1,4 @@
+import { createDb, type Db } from "@lingbuzz/db";
 import { CHUNK_SIZE } from "./constants";
 import { classifyRows, type ScrapeAction } from "./detect";
 import { fetchListingPage, generateListingUrls } from "./listing";
@@ -28,7 +29,7 @@ const stats: ScrapeStats = {
 /**
  * Processes a single scrape action (full-scrape or update-version).
  */
-async function processAction(action: ScrapeAction): Promise<void> {
+async function processAction(db: Db, action: ScrapeAction): Promise<void> {
   if (action.action === "skip") {
     stats.skipped++;
     return;
@@ -48,7 +49,7 @@ async function processAction(action: ScrapeAction): Promise<void> {
         return;
       }
 
-      await persistPaper(paper, row.authors);
+      await persistPaper(db, paper, row.authors);
       stats.fullScrapes++;
       logger.info(`Scraped and persisted paper ${row.paperId}`);
     } else if (action.action === "update-version") {
@@ -86,12 +87,17 @@ async function main(): Promise<void> {
 
   logger.info(`Starting scraper in ${fullMode ? "full" : "incremental"} mode`);
 
+  const db = createDb({
+    url: process.env.TURSO_DATABASE_URL as string,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
+
   const urls = await generateListingUrls();
   logger.info(`Generated ${urls.length} listing page URLs`);
 
   for (const url of urls) {
     const rows = await fetchListingPage(url);
-    const actions = await classifyRows(rows);
+    const actions = await classifyRows(db, rows);
 
     const actionable = actions.filter((a) => a.action !== "skip");
     stats.pagesProcessed++;
@@ -107,7 +113,9 @@ async function main(): Promise<void> {
       `Page ${stats.pagesProcessed}: ${actionable.length} actionable / ${rows.length} total rows`
     );
 
-    await mapWithConcurrency(actions, CHUNK_SIZE, processAction);
+    await mapWithConcurrency(actions, CHUNK_SIZE, (action) =>
+      processAction(db, action)
+    );
   }
 
   printStats();

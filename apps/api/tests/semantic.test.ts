@@ -6,6 +6,7 @@ vi.mock("@lingbuzz/db/queries/select", () => {
   };
 });
 
+import type { Db } from "@lingbuzz/db";
 import { selectPaperByLingbuzzId } from "@lingbuzz/db/queries/select";
 import { Hono } from "hono";
 import semanticRoute from "../src/routes/semantic";
@@ -14,11 +15,13 @@ const mockSelectPaper = vi.mocked(selectPaperByLingbuzzId);
 
 const mockAI = { run: vi.fn() };
 const mockVectorize = { query: vi.fn() };
+const mockDb = {} as Db;
 
 function createApp() {
   const app = new Hono();
   app.use("*", async (c, next) => {
     c.env = { AI: mockAI, VECTORIZE: mockVectorize } as Record<string, unknown>;
+    c.set("db", mockDb);
     await next();
   });
   app.route("/", semanticRoute);

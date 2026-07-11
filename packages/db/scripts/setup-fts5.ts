@@ -1,7 +1,12 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import db from "../src";
+import { createDb } from "../src/client";
+
+const db = createDb({
+  url: process.env.TURSO_DATABASE_URL as string,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
 const BREAKPOINT = "--> statement-breakpoint";
 const FTS_MIGRATION_SUFFIX = "_fts5_search.sql";
