@@ -179,8 +179,8 @@ async function main(): Promise<void> {
       );
     }
 
-    printStats();
     success = true;
+    printStats();
   } catch (error) {
     errorMessage = error instanceof Error ? error.message : String(error);
     throw error;
