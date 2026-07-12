@@ -119,6 +119,20 @@ export const keywordsToPapers = sqliteTable(
   (t) => [primaryKey({ columns: [t.keywordId, t.paperId] })]
 );
 
+export const syncRuns = sqliteTable("sync_runs", (t) => ({
+  syncRunId: t.integer().primaryKey(),
+  runner: t.text().notNull(),
+  startedAt: t.integer({ mode: "timestamp" }).notNull(),
+  finishedAt: t.integer({ mode: "timestamp" }),
+  papersSeen: t.integer().notNull().default(0),
+  papersNew: t.integer().notNull().default(0),
+  papersUpdated: t.integer().notNull().default(0),
+  papersFailed: t.integer().notNull().default(0),
+  success: t.integer({ mode: "boolean" }).notNull().default(false),
+  errorMessage: t.text(),
+  ...rowTimestampColumns(t),
+}));
+
 export type AuthorsTable = typeof authors;
 export type PapersTable = typeof papers;
 export type KeywordsTable = typeof keywords;

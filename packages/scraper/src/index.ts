@@ -1,4 +1,5 @@
 import { createDb, type Db } from "@lingbuzz/db";
+import { finishSyncRun, insertSyncRunStart } from "@lingbuzz/db/queries/sync";
 import { CHUNK_SIZE } from "./constants";
 import { classifyRows, type ScrapeAction } from "./detect";
 import { fetchListingPage, generateListingUrls } from "./listing";
@@ -12,6 +13,8 @@ interface ScrapeStats {
   failed: number;
   fullScrapes: number;
   pagesProcessed: number;
+  // Total listing rows examined across all pages processed this run.
+  papersSeen: number;
   skipped: number;
   startTime: number;
   versionUpdates: number;
@@ -20,6 +23,7 @@ interface ScrapeStats {
 const stats: ScrapeStats = {
   startTime: Date.now(),
   pagesProcessed: 0,
+  papersSeen: 0,
   fullScrapes: 0,
   versionUpdates: 0,
   skipped: 0,
@@ -63,6 +67,51 @@ async function processAction(db: Db, action: ScrapeAction): Promise<void> {
   }
 }
 
+/**
+ * Records the start of a Sync run. Recording failures are logged but never
+ * crash the scrape, so a missing sync_runs table degrades gracefully.
+ */
+async function startSyncRun(
+  db: Db,
+  runner: string
+): Promise<number | undefined> {
+  try {
+    return await insertSyncRunStart(db, { runner, startedAt: new Date() });
+  } catch (error) {
+    logger.error("Failed to record sync run start", error);
+    return undefined;
+  }
+}
+
+/**
+ * Fills in the outcome of a Sync run, mapping the accumulated scrape stats.
+ * A missing start id or a recording failure is logged and ignored.
+ */
+async function completeSyncRun(
+  db: Db,
+  syncRunId: number | undefined,
+  success: boolean,
+  errorMessage: string | undefined
+): Promise<void> {
+  if (syncRunId === undefined) {
+    return;
+  }
+
+  try {
+    await finishSyncRun(db, syncRunId, {
+      finishedAt: new Date(),
+      papersSeen: stats.papersSeen,
+      papersNew: stats.fullScrapes,
+      papersUpdated: stats.versionUpdates,
+      papersFailed: stats.failed,
+      success,
+      errorMessage,
+    });
+  } catch (error) {
+    logger.error("Failed to record sync run completion", error);
+  }
+}
+
 function printStats(): void {
   const durationMs = Date.now() - stats.startTime;
   const durationSec = (durationMs / 1000).toFixed(2);
@@ -97,33 +146,47 @@ async function main(): Promise<void> {
     authToken: process.env.TURSO_AUTH_TOKEN,
   });
 
-  const urls = await generateListingUrls();
-  logger.info(`Generated ${urls.length} listing page URLs`);
+  const runner = process.env.SYNC_RUNNER ?? "local";
+  const syncRunId = await startSyncRun(db, runner);
 
-  for (const url of urls) {
-    const rows = await fetchListingPage(url);
-    const actions = await classifyRows(db, rows);
+  let success = false;
+  let errorMessage: string | undefined;
+  try {
+    const urls = await generateListingUrls();
+    logger.info(`Generated ${urls.length} listing page URLs`);
 
-    const actionable = actions.filter((a) => a.action !== "skip");
-    stats.pagesProcessed++;
+    for (const url of urls) {
+      const rows = await fetchListingPage(url);
+      const actions = await classifyRows(db, rows);
 
-    if (!fullMode && actionable.length === 0) {
+      const actionable = actions.filter((a) => a.action !== "skip");
+      stats.pagesProcessed++;
+      stats.papersSeen += rows.length;
+
+      if (!fullMode && actionable.length === 0) {
+        logger.info(
+          `No actionable rows on page ${stats.pagesProcessed}, stopping incremental scrape`
+        );
+        break;
+      }
+
       logger.info(
-        `No actionable rows on page ${stats.pagesProcessed}, stopping incremental scrape`
+        `Page ${stats.pagesProcessed}: ${actionable.length} actionable / ${rows.length} total rows`
       );
-      break;
+
+      await mapWithConcurrency(actions, CHUNK_SIZE, (action) =>
+        processAction(db, action)
+      );
     }
 
-    logger.info(
-      `Page ${stats.pagesProcessed}: ${actionable.length} actionable / ${rows.length} total rows`
-    );
-
-    await mapWithConcurrency(actions, CHUNK_SIZE, (action) =>
-      processAction(db, action)
-    );
+    printStats();
+    success = true;
+  } catch (error) {
+    errorMessage = error instanceof Error ? error.message : String(error);
+    throw error;
+  } finally {
+    await completeSyncRun(db, syncRunId, success, errorMessage);
   }
-
-  printStats();
 }
 
 await main();
