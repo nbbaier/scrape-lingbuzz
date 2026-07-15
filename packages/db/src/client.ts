@@ -5,7 +5,6 @@ import {
   keywords,
   keywordsToPapers,
   papers,
-  updateAuthorsTimestampTrigger,
 } from "./schema";
 import {
   authorsRelations,
@@ -21,7 +20,6 @@ const schema = {
   keywords,
   keywordsToPapers,
   papers,
-  updateAuthorsTimestampTrigger,
   authorsRelations,
   authorsToPapersRelations,
   keywordsRelations,
