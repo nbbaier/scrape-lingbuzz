@@ -16,7 +16,8 @@
     "db:migrate": "bun run --env-file=.env --filter @lingbuzz/db migrate",
     "db:rebuild-fts": "bun run --env-file=.env --filter @lingbuzz/db rebuild:fts",
     "scrape": "bun --filter @lingbuzz/scraper start",
-    "api:dev": "bun --filter @lingbuzz/api dev"
+    "api:dev": "bun --filter @lingbuzz/api dev",
+    "web:dev": "bun --filter @lingbuzz/web dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.14",

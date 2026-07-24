@@ -36,6 +36,8 @@ jobs:
         run: bun --filter @lingbuzz/scraper typecheck
       - name: Typecheck api
         run: bun --filter @lingbuzz/api typecheck
+      - name: Typecheck web
+        run: bun --filter @lingbuzz/web typecheck
       - name: Tests (legacy root src/)
         run: bun run test
       - name: Tests db
@@ -44,3 +46,7 @@ jobs:
         run: bun --filter @lingbuzz/scraper test
       - name: Tests api
         run: bun --filter @lingbuzz/api test
+      - name: Tests web
+        run: bun --filter @lingbuzz/web test
+      - name: Build web
+        run: bun --filter @lingbuzz/web build
