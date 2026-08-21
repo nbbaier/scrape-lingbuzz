@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "lingbuzz-web",
+  "main": "./dist/_worker.js/index.js",
+  "compatibility_date": "2025-02-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    // Points the built site at the deployed API. Set this to the real
+    // lingbuzz-api Workers URL before deploying; `bun run build` bakes
+    // PUBLIC_API_URL into the client via Vite, so it must also be set
+    // in the shell environment (or an .env.production file) at build time.
+    "PUBLIC_API_URL": "https://lingbuzz-api.example.workers.dev"
+  }
+}

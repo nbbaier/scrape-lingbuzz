@@ -21,6 +21,8 @@ id-cache.json
 .cache/
 .eslintcache
 .wrangler/
+.astro/
+.impeccable/
 
 # Package manager noise
 *.tgz
