@@ -1,40 +1,28 @@
-# Dependencies
-node_modules/
-
-# Build and test output
-coverage/
-dist/
-*.tsbuildinfo
-
-# Local environment overrides
-.env
-.env.local
-.env.*.local
-
-# Runtime and generated data
-*.db
-*.sqlite
-*.sqlite3
-id-cache.json
-
-# Tool caches
-.cache/
-.eslintcache
-.wrangler/
 .astro/
-.impeccable/
-
-# Package manager noise
-*.tgz
-*.log
-*.pid
-*.pid.lock
-.pnpm-debug.log*
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local agent/editor state
+.cache/
 .cachebro/
 .claude/worktrees/
 .cursor/hooks/state/continual-learning*
+.dev.vars
+.env
+.env.*.local
+.env.local
+.eslintcache
+.impeccable/
+.pnpm-debug.log*
+.wrangler/
+*.db
+*.log
+*.pid
+*.pid.lock
+*.sqlite
+*.sqlite3
+*.tgz
+*.tsbuildinfo
+coverage/
+dist/
+id-cache.json
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
