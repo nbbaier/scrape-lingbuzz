@@ -2,7 +2,7 @@
 
 Outcome of a design-grilling session (2026-07-04) that unified four repos
 (`scrape-lingbuzz`, `slb`, `astro-lingbuzz`, `modern-lingbuzz`) into this
-monorepo as the single project. See `CONTEXT.md` for the domain glossary and
+monorepo as the single project. See `GLOSSARY.md` for the domain glossary and
 `docs/adr/` for decisions with recorded trade-offs.
 
 ## What this is
