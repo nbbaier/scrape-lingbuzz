@@ -69,7 +69,10 @@ export async function selectKeywordId(db: Db, keyword: string) {
 }
 
 /// PAPERS ///
-export async function selectPapers(db: Db, { limit }: { limit?: number } = {}) {
+export async function selectPapers(
+  db: Db,
+  { limit, offset }: { limit?: number; offset?: number } = {}
+) {
   const result = await db.query.papers.findMany({
     with: {
       authorsToPapers: {
@@ -89,6 +92,7 @@ export async function selectPapers(db: Db, { limit }: { limit?: number } = {}) {
       // },
     },
     limit,
+    offset,
   });
   return result;
 }

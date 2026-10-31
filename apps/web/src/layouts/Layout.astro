@@ -1,0 +1,102 @@
+---
+import "../styles/global.css";
+import { getLatestSync } from "../lib/api";
+import { relativeTime } from "../lib/time";
+
+interface Props {
+  title?: string;
+}
+
+const { title = "lingbuzz reading layer" } = Astro.props;
+
+const syncResult = await getLatestSync();
+const syncMessage = syncResult.ok
+  ? `Last synced ${relativeTime(new Date(syncResult.data.finishedAt))}`
+  : "Sync status unavailable";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/">lingbuzz</a>
+      <nav class="site-nav">
+        <a href="/">Browse</a>
+        <a href="/search">Search</a>
+      </nav>
+      <p class="tagline">an unofficial reading layer for LingBuzz</p>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        All papers are hosted by LingBuzz (<a
+          href="https://ling.auf.net/lingbuzz"
+          rel="noreferrer">ling.auf.net</a
+        >), run by Michal Starke.
+      </p>
+      <p class="sync-indicator">{syncMessage}</p>
+    </footer>
+
+    <style>
+      .site-header {
+        display: flex;
+        align-items: baseline;
+        gap: 1.5rem;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--color-border);
+        background: var(--color-bg-secondary);
+      }
+
+      .wordmark {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+
+      .wordmark:hover {
+        color: var(--color-accent);
+      }
+
+      .site-nav {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .tagline {
+        margin-left: auto;
+        color: var(--color-text-tertiary);
+        font-size: 0.875rem;
+      }
+
+      main {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      .site-footer {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 2rem;
+        border-top: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .sync-indicator {
+        color: var(--color-text-tertiary);
+        font-family: var(--font-mono);
+      }
+    </style>
+  </body>
+</html>
