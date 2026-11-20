@@ -12,8 +12,7 @@
     "./queries/insert": "./src/queries/insert.ts",
     "./queries/search": "./src/queries/search.ts",
     "./queries/sync": "./src/queries/sync.ts",
-    "./queries/utils": "./src/queries/query-utils.ts",
-    "./trigger": "./src/trigger.ts"
+    "./queries/utils": "./src/queries/query-utils.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
