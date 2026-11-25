@@ -1,0 +1,115 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { type ApiPaper, getPapers } from "../lib/api";
+
+const PAGE_SIZE = 20;
+
+const pageParam = Number.parseInt(
+  Astro.url.searchParams.get("page") ?? "1",
+  10
+);
+const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+const offset = (page - 1) * PAGE_SIZE;
+
+const result = await getPapers({ limit: PAGE_SIZE, offset });
+
+function authorNames(paper: ApiPaper): string {
+  return paper.authorsToPapers
+    .slice()
+    .sort((a, b) => a.authorPosition - b.authorPosition)
+    .map(({ author }) =>
+      [author.firstName, author.lastName].filter(Boolean).join(" ")
+    )
+    .filter((name) => name.length > 0)
+    .join(", ");
+}
+---
+
+<Layout>
+  <h1>Recent papers</h1>
+
+  {
+    !result.ok && (
+      <p class="error-state">
+        {result.error}. Try again in a moment, or visit{" "}
+        <a href="https://ling.auf.net/lingbuzz" rel="noreferrer">
+          ling.auf.net
+        </a>{" "}
+        directly.
+      </p>
+    )
+  }
+
+  {
+    result.ok && result.data.length === 0 && (
+      <p class="empty-state">No papers found.</p>
+    )
+  }
+
+  {
+    result.ok && result.data.length > 0 && (
+      <ul class="paper-list">
+        {result.data.map((paper) => (
+          <li class="paper-item">
+            <h2>
+              <a href={`/papers/${paper.lingbuzzId}`}>{paper.paperTitle}</a>
+            </h2>
+            <p class="paper-meta">
+              {authorNames(paper) || "Unknown author"} &middot; {paper.paperMonth}{" "}
+              {paper.paperYear}
+              {typeof paper.downloads === "number" && (
+                <> &middot; {paper.downloads} downloads</>
+              )}
+            </p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    result.ok && (
+      <nav class="pagination">
+        {page > 1 && <a href={`/?page=${page - 1}`}>&larr; Newer</a>}
+        {result.data.length === PAGE_SIZE && (
+          <a href={`/?page=${page + 1}`}>Older &rarr;</a>
+        )}
+      </nav>
+    )
+  }
+</Layout>
+
+<style>
+  .paper-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .paper-item {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .paper-item h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.125rem;
+  }
+
+  .paper-meta {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+  }
+
+  .error-state,
+  .empty-state {
+    color: var(--color-text-secondary);
+  }
+</style>

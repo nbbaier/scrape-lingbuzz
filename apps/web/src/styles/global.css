@@ -1,0 +1,41 @@
+:root {
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-body: "IBM Plex Sans", -apple-system, sans-serif;
+  --font-mono: "Space Mono", monospace;
+  --color-bg-primary: #fafaf8;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f5f5f2;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #555555;
+  --color-text-tertiary: #888888;
+  --color-accent: #e85d04;
+  --color-accent-hover: #d45203;
+  --color-accent-light: #fff3ed;
+  --color-border: #e5e5e5;
+  --color-border-light: #f0f0f0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
